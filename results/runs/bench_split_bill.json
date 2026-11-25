@@ -1,0 +1,455 @@
+{
+ "task_id": "split_bill",
+ "task": "Write a function called `split_bill` that splits a restaurant bill evenly between a number of people. It takes the\ntotal as text, like \"100.00\", and the number of people, and gives back each person's share as text with two decimals,\nlike \"33.34\". The shares must add up exactly to the total; when it doesn't divide evenly, the first people pay the\nextra cent. A negative or invalid total, or fewer than one person, should cause an error.\n",
+ "started": "2026-11-25 16:28:15",
+ "generator_model": "openai/gpt-oss-20b",
+ "reviewer_model": "gemini-3.5-flash-lite",
+ "inject_wrong_finding": false,
+ "iterations": [
+  {
+   "iteration": 1,
+   "diff": "",
+   "reverted": false,
+   "code": {
+    "solution_code": "from decimal import Decimal, ROUND_DOWN\n\n\ndef split_bill(total_str, people):\n    \"\"\"Split a bill evenly between people.\n\n    Parameters\n    ----------\n    total_str : str\n        The total amount as a string, e.g. \"100.00\".\n    people : int\n        Number of people to split the bill between.\n\n    Returns\n    -------\n    list[str]\n        A list of strings, each with two decimal places, representing each person's share.\n\n    Raises\n    ------\n    ValueError\n        If the total is negative, not a valid decimal, or if people < 1.\n    \"\"\"\n    # Validate people\n    if not isinstance(people, int) or people < 1:\n        raise ValueError(\"Number of people must be an integer >= 1\")\n\n    # Validate total\n    try:\n        total = Decimal(total_str)\n    except Exception:\n        raise ValueError(\"Total must be a valid decimal string\")\n    if total < 0:\n        raise ValueError(\"Total must be non\u2011negative\")\n\n    # Work in cents to avoid floating point issues\n    total_cents = int((total * 100).to_integral_value(rounding=ROUND_DOWN))\n    base_share = total_cents // people\n    remainder = total_cents % people\n\n    shares = []\n    for i in range(people):\n        share_cents = base_share + (1 if i < remainder else 0)\n        share = Decimal(share_cents) / 100\n        shares.append(f\"{share:.2f}\")\n    return shares\n",
+    "test_code": "import pytest\nfrom solution import split_bill\n\n# Normal cases\n\ndef test_even_split():\n    assert split_bill(\"100.00\", 4) == [\"25.00\", \"25.00\", \"25.00\", \"25.00\"]\n\n\ndef test_uneven_split():\n    # 100.00 split among 3 -> 33.33, 33.33, 33.34\n    assert split_bill(\"100.00\", 3) == [\"33.34\", \"33.33\", \"33.33\"]\n\n\ndef test_small_amount():\n    # 0.01 split among 2 -> 0.01, 0.00\n    assert split_bill(\"0.01\", 2) == [\"0.01\", \"0.00\"]\n\n\ndef test_large_amount():\n    assert split_bill(\"1234.56\", 5) == [\"246.91\", \"246.91\", \"246.91\", \"246.91\", \"246.91\"]\n\n# Edge cases\n\ndef test_single_person():\n    assert split_bill(\"50.00\", 1) == [\"50.00\"]\n\n\ndef test_zero_total():\n    assert split_bill(\"0.00\", 3) == [\"0.00\", \"0.00\", \"0.00\"]\n\n# Error cases\n\ndef test_negative_total():\n    with pytest.raises(ValueError):\n        split_bill(\"-10.00\", 2)\n\n\ndef test_invalid_total():\n    with pytest.raises(ValueError):\n        split_bill(\"abc\", 2)\n\n\ndef test_zero_people():\n    with pytest.raises(ValueError):\n        split_bill(\"10.00\", 0)\n\n\ndef test_non_integer_people():\n    with pytest.raises(ValueError):\n        split_bill(\"10.00\", 2.5)\n\n# Rounding check: ensure sum equals original total\n\ndef test_sum_equals_total():\n    total = \"123.45\"\n    people = 7\n    shares = split_bill(total, people)\n    assert sum(Decimal(s) for s in shares) == Decimal(total)\n"
+   },
+   "test_results": {
+    "status": "failed",
+    "passed": 9,
+    "failed": 2,
+    "tests": [
+     {
+      "name": "test_even_split",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_uneven_split",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_small_amount",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_large_amount",
+      "outcome": "failed",
+      "message": "AssertionError: assert ['246.92', '2...91', '246.91'] == ['246.91', '2...91', '246.91']\n  \n  At index 0 diff: '246.92' != '246.91'\n  Use -v to get more diff"
+     },
+     {
+      "name": "test_single_person",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_zero_total",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_negative_total",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_total",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_zero_people",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_non_integer_people",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sum_equals_total",
+      "outcome": "failed",
+      "message": "NameError: name 'Decimal' is not defined"
+     }
+    ],
+    "output": "...F......F                                                              [100%]\n================================== FAILURES ===================================\n______________________________ test_large_amount ______________________________\n\n    def test_large_amount():\n>       assert split_bill(\"1234.56\", 5) == [\"246.91\", \"246.91\", \"246.91\", \"246.91\", \"246.91\"]\nE       AssertionError: assert ['246.92', '2...91', '246.91'] == ['246.91', '2...91', '246.91']\nE         \nE         At index 0 diff: '246.92' != '246.91'\nE         Use -v to get more diff\n\ntest_solution.py:21: AssertionError\n____________________________ test_sum_equals_total ____________________________\n\n    def test_sum_equals_total():\n        total = \"123.45\"\n        people = 7\n        shares = split_bill(total, people)\n>       assert sum(Decimal(s) for s in shares) == Decimal(total)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntest_solution.py:59: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\n.0 = <list_iterator object at 0x000001EEB1965960>\n\n>   assert sum(Decimal(s) for s in shares) == Decimal(total)\n               ^^^^^^^\nE   NameError: name 'Decimal' is not defined\n\ntest_solution.py:59: NameError\n=========================== short test summary info ===========================\nFAILED test_solution.py::test_large_amount - AssertionError: assert ['246.92'...\nFAILED test_solution.py::test_sum_equals_total - NameError: name 'Decimal' is...\n2 failed, 9 passed in 0.15s\n"
+   },
+   "lint_results": {
+    "status": "issues",
+    "blocking_count": 3,
+    "advisory_count": 0,
+    "issues": [
+     {
+      "code": "B904",
+      "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+      "file": "solution.py",
+      "line": 32,
+      "blocking": true
+     },
+     {
+      "code": "F821",
+      "message": "Undefined name `Decimal`",
+      "file": "test_solution.py",
+      "line": 59,
+      "blocking": true
+     },
+     {
+      "code": "F821",
+      "message": "Undefined name `Decimal`",
+      "file": "test_solution.py",
+      "line": 59,
+      "blocking": true
+     }
+    ]
+   },
+   "review_summary": "The code implements the required bill splitting logic, but has test failures due to an incorrect test expectation, an undefined import in the test file, and a missing exception chaining in solution.py.",
+   "new_findings": [
+    "F1",
+    "F2",
+    "F3"
+   ],
+   "standard_sections": [
+    "CS-1",
+    "CS-6",
+    "CS-7",
+    "CS-9"
+   ],
+   "generator_decisions": [
+    {
+     "finding_id": "F1",
+     "decision": "accept",
+     "reason": "Test expectation was incorrect; corrected to reflect proper distribution."
+    },
+    {
+     "finding_id": "F2",
+     "decision": "accept",
+     "reason": "Imported Decimal to resolve NameError."
+    },
+    {
+     "finding_id": "F3",
+     "decision": "accept",
+     "reason": "Added explicit exception chaining to satisfy lint rule."
+    }
+   ]
+  },
+  {
+   "iteration": 2,
+   "diff": "--- a/solution.py\n+++ b/solution.py\n@@ -28,8 +28,8 @@\n     # Validate total\n     try:\n         total = Decimal(total_str)\n-    except Exception:\n-        raise ValueError(\"Total must be a valid decimal string\")\n+    except Exception as exc:\n+        raise ValueError(\"Total must be a valid decimal string\") from exc\n     if total < 0:\n         raise ValueError(\"Total must be non\u2011negative\")\n \n--- a/test_solution.py\n+++ b/test_solution.py\n@@ -1,4 +1,5 @@\n import pytest\n+from decimal import Decimal\n from solution import split_bill\n \n # Normal cases\n@@ -8,7 +9,7 @@\n \n \n def test_uneven_split():\n-    # 100.00 split among 3 -> 33.33, 33.33, 33.34\n+    # 100.00 split among 3 -> 33.34, 33.33, 33.33\n     assert split_bill(\"100.00\", 3) == [\"33.34\", \"33.33\", \"33.33\"]\n \n \n@@ -18,7 +19,7 @@\n \n \n def test_large_amount():\n-    assert split_bill(\"1234.56\", 5) == [\"246.91\", \"246.91\", \"246.91\", \"246.91\", \"246.91\"]\n+    assert split_bill(\"1234.56\", 5) == [\"246.92\", \"246.91\", \"246.91\", \"246.91\", \"246.91\"]\n \n # Edge cases\n ",
+   "reverted": false,
+   "code": {
+    "solution_code": "from decimal import Decimal, ROUND_DOWN\n\n\ndef split_bill(total_str, people):\n    \"\"\"Split a bill evenly between people.\n\n    Parameters\n    ----------\n    total_str : str\n        The total amount as a string, e.g. \"100.00\".\n    people : int\n        Number of people to split the bill between.\n\n    Returns\n    -------\n    list[str]\n        A list of strings, each with two decimal places, representing each person's share.\n\n    Raises\n    ------\n    ValueError\n        If the total is negative, not a valid decimal, or if people < 1.\n    \"\"\"\n    # Validate people\n    if not isinstance(people, int) or people < 1:\n        raise ValueError(\"Number of people must be an integer >= 1\")\n\n    # Validate total\n    try:\n        total = Decimal(total_str)\n    except Exception as exc:\n        raise ValueError(\"Total must be a valid decimal string\") from exc\n    if total < 0:\n        raise ValueError(\"Total must be non\u2011negative\")\n\n    # Work in cents to avoid floating point issues\n    total_cents = int((total * 100).to_integral_value(rounding=ROUND_DOWN))\n    base_share = total_cents // people\n    remainder = total_cents % people\n\n    shares = []\n    for i in range(people):\n        share_cents = base_share + (1 if i < remainder else 0)\n        share = Decimal(share_cents) / 100\n        shares.append(f\"{share:.2f}\")\n    return shares\n",
+    "test_code": "import pytest\nfrom decimal import Decimal\nfrom solution import split_bill\n\n# Normal cases\n\ndef test_even_split():\n    assert split_bill(\"100.00\", 4) == [\"25.00\", \"25.00\", \"25.00\", \"25.00\"]\n\n\ndef test_uneven_split():\n    # 100.00 split among 3 -> 33.34, 33.33, 33.33\n    assert split_bill(\"100.00\", 3) == [\"33.34\", \"33.33\", \"33.33\"]\n\n\ndef test_small_amount():\n    # 0.01 split among 2 -> 0.01, 0.00\n    assert split_bill(\"0.01\", 2) == [\"0.01\", \"0.00\"]\n\n\ndef test_large_amount():\n    assert split_bill(\"1234.56\", 5) == [\"246.92\", \"246.91\", \"246.91\", \"246.91\", \"246.91\"]\n\n# Edge cases\n\ndef test_single_person():\n    assert split_bill(\"50.00\", 1) == [\"50.00\"]\n\n\ndef test_zero_total():\n    assert split_bill(\"0.00\", 3) == [\"0.00\", \"0.00\", \"0.00\"]\n\n# Error cases\n\ndef test_negative_total():\n    with pytest.raises(ValueError):\n        split_bill(\"-10.00\", 2)\n\n\ndef test_invalid_total():\n    with pytest.raises(ValueError):\n        split_bill(\"abc\", 2)\n\n\ndef test_zero_people():\n    with pytest.raises(ValueError):\n        split_bill(\"10.00\", 0)\n\n\ndef test_non_integer_people():\n    with pytest.raises(ValueError):\n        split_bill(\"10.00\", 2.5)\n\n# Rounding check: ensure sum equals original total\n\ndef test_sum_equals_total():\n    total = \"123.45\"\n    people = 7\n    shares = split_bill(total, people)\n    assert sum(Decimal(s) for s in shares) == Decimal(total)\n"
+   },
+   "test_results": {
+    "status": "passed",
+    "passed": 11,
+    "failed": 0,
+    "tests": [
+     {
+      "name": "test_even_split",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_uneven_split",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_small_amount",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_large_amount",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_single_person",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_zero_total",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_negative_total",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_total",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_zero_people",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_non_integer_people",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sum_equals_total",
+      "outcome": "passed",
+      "message": ""
+     }
+    ],
+    "output": "...........                                                              [100%]\n11 passed in 0.09s\n"
+   },
+   "lint_results": {
+    "status": "clean",
+    "blocking_count": 0,
+    "advisory_count": 0,
+    "issues": []
+   },
+   "review_summary": "The code and tests are fully correct, pass all static analysis checks, and meet all functional and coding standard requirements.",
+   "new_findings": [],
+   "standard_sections": [
+    "CS-1",
+    "CS-6",
+    "CS-7",
+    "CS-9"
+   ]
+  }
+ ],
+ "status": "converged",
+ "error": null,
+ "baseline": {
+  "solution_code": "from decimal import Decimal, ROUND_DOWN\n\n\ndef split_bill(total_str, people):\n    \"\"\"Split a bill evenly between people.\n\n    Parameters\n    ----------\n    total_str : str\n        The total amount as a string, e.g. \"100.00\".\n    people : int\n        Number of people to split the bill between.\n\n    Returns\n    -------\n    list[str]\n        A list of strings, each with two decimal places, representing each person's share.\n\n    Raises\n    ------\n    ValueError\n        If the total is negative, not a valid decimal, or if people < 1.\n    \"\"\"\n    # Validate people\n    if not isinstance(people, int) or people < 1:\n        raise ValueError(\"Number of people must be an integer >= 1\")\n\n    # Validate total\n    try:\n        total = Decimal(total_str)\n    except Exception:\n        raise ValueError(\"Total must be a valid decimal string\")\n    if total < 0:\n        raise ValueError(\"Total must be non\u2011negative\")\n\n    # Work in cents to avoid floating point issues\n    total_cents = int((total * 100).to_integral_value(rounding=ROUND_DOWN))\n    base_share = total_cents // people\n    remainder = total_cents % people\n\n    shares = []\n    for i in range(people):\n        share_cents = base_share + (1 if i < remainder else 0)\n        share = Decimal(share_cents) / 100\n        shares.append(f\"{share:.2f}\")\n    return shares\n",
+  "test_code": "import pytest\nfrom solution import split_bill\n\n# Normal cases\n\ndef test_even_split():\n    assert split_bill(\"100.00\", 4) == [\"25.00\", \"25.00\", \"25.00\", \"25.00\"]\n\n\ndef test_uneven_split():\n    # 100.00 split among 3 -> 33.33, 33.33, 33.34\n    assert split_bill(\"100.00\", 3) == [\"33.34\", \"33.33\", \"33.33\"]\n\n\ndef test_small_amount():\n    # 0.01 split among 2 -> 0.01, 0.00\n    assert split_bill(\"0.01\", 2) == [\"0.01\", \"0.00\"]\n\n\ndef test_large_amount():\n    assert split_bill(\"1234.56\", 5) == [\"246.91\", \"246.91\", \"246.91\", \"246.91\", \"246.91\"]\n\n# Edge cases\n\ndef test_single_person():\n    assert split_bill(\"50.00\", 1) == [\"50.00\"]\n\n\ndef test_zero_total():\n    assert split_bill(\"0.00\", 3) == [\"0.00\", \"0.00\", \"0.00\"]\n\n# Error cases\n\ndef test_negative_total():\n    with pytest.raises(ValueError):\n        split_bill(\"-10.00\", 2)\n\n\ndef test_invalid_total():\n    with pytest.raises(ValueError):\n        split_bill(\"abc\", 2)\n\n\ndef test_zero_people():\n    with pytest.raises(ValueError):\n        split_bill(\"10.00\", 0)\n\n\ndef test_non_integer_people():\n    with pytest.raises(ValueError):\n        split_bill(\"10.00\", 2.5)\n\n# Rounding check: ensure sum equals original total\n\ndef test_sum_equals_total():\n    total = \"123.45\"\n    people = 7\n    shares = split_bill(total, people)\n    assert sum(Decimal(s) for s in shares) == Decimal(total)\n"
+ },
+ "final": {
+  "solution_code": "from decimal import Decimal, ROUND_DOWN\n\n\ndef split_bill(total_str, people):\n    \"\"\"Split a bill evenly between people.\n\n    Parameters\n    ----------\n    total_str : str\n        The total amount as a string, e.g. \"100.00\".\n    people : int\n        Number of people to split the bill between.\n\n    Returns\n    -------\n    list[str]\n        A list of strings, each with two decimal places, representing each person's share.\n\n    Raises\n    ------\n    ValueError\n        If the total is negative, not a valid decimal, or if people < 1.\n    \"\"\"\n    # Validate people\n    if not isinstance(people, int) or people < 1:\n        raise ValueError(\"Number of people must be an integer >= 1\")\n\n    # Validate total\n    try:\n        total = Decimal(total_str)\n    except Exception as exc:\n        raise ValueError(\"Total must be a valid decimal string\") from exc\n    if total < 0:\n        raise ValueError(\"Total must be non\u2011negative\")\n\n    # Work in cents to avoid floating point issues\n    total_cents = int((total * 100).to_integral_value(rounding=ROUND_DOWN))\n    base_share = total_cents // people\n    remainder = total_cents % people\n\n    shares = []\n    for i in range(people):\n        share_cents = base_share + (1 if i < remainder else 0)\n        share = Decimal(share_cents) / 100\n        shares.append(f\"{share:.2f}\")\n    return shares\n",
+  "test_code": "import pytest\nfrom decimal import Decimal\nfrom solution import split_bill\n\n# Normal cases\n\ndef test_even_split():\n    assert split_bill(\"100.00\", 4) == [\"25.00\", \"25.00\", \"25.00\", \"25.00\"]\n\n\ndef test_uneven_split():\n    # 100.00 split among 3 -> 33.34, 33.33, 33.33\n    assert split_bill(\"100.00\", 3) == [\"33.34\", \"33.33\", \"33.33\"]\n\n\ndef test_small_amount():\n    # 0.01 split among 2 -> 0.01, 0.00\n    assert split_bill(\"0.01\", 2) == [\"0.01\", \"0.00\"]\n\n\ndef test_large_amount():\n    assert split_bill(\"1234.56\", 5) == [\"246.92\", \"246.91\", \"246.91\", \"246.91\", \"246.91\"]\n\n# Edge cases\n\ndef test_single_person():\n    assert split_bill(\"50.00\", 1) == [\"50.00\"]\n\n\ndef test_zero_total():\n    assert split_bill(\"0.00\", 3) == [\"0.00\", \"0.00\", \"0.00\"]\n\n# Error cases\n\ndef test_negative_total():\n    with pytest.raises(ValueError):\n        split_bill(\"-10.00\", 2)\n\n\ndef test_invalid_total():\n    with pytest.raises(ValueError):\n        split_bill(\"abc\", 2)\n\n\ndef test_zero_people():\n    with pytest.raises(ValueError):\n        split_bill(\"10.00\", 0)\n\n\ndef test_non_integer_people():\n    with pytest.raises(ValueError):\n        split_bill(\"10.00\", 2.5)\n\n# Rounding check: ensure sum equals original total\n\ndef test_sum_equals_total():\n    total = \"123.45\"\n    people = 7\n    shares = split_bill(total, people)\n    assert sum(Decimal(s) for s in shares) == Decimal(total)\n"
+ },
+ "findings": [
+  {
+   "severity": "major",
+   "category": "bug",
+   "file": "test_solution.py",
+   "line": 21,
+   "title": "Incorrect test expectation for large amount split",
+   "rationale": "1234.56 split by 5 is 246.912 per person. In cents, 123456 / 5 = 24691 with a remainder of 1. Therefore, the first person pays 246.92 and the rest pay 246.91. The test incorrectly expected all 246.91.",
+   "suggested_fix": "Update test_large_amount to expect ['246.92', '246.91', '246.91', '246.91', '246.91'].",
+   "evidence": "FAILED test_solution.py::test_large_amount - AssertionError: assert ['246.92', '246.91', '246.91', '246.91', '246.91'] == ['246.91', '246.91', '246.91', '246.91', '246.91']",
+   "standard_ref": "",
+   "id": "F1",
+   "iteration": 1,
+   "blocking": false,
+   "status": "fixed",
+   "history": [
+    {
+     "iteration": 1,
+     "actor": "reviewer",
+     "status": "open",
+     "reason": ""
+    },
+    {
+     "iteration": 1,
+     "actor": "generator",
+     "status": "accepted",
+     "reason": "Test expectation was incorrect; corrected to reflect proper distribution."
+    },
+    {
+     "iteration": 2,
+     "actor": "orchestrator",
+     "status": "fixed",
+     "reason": "revision kept (no regression)"
+    }
+   ],
+   "injected": false
+  },
+  {
+   "severity": "major",
+   "category": "test_gap",
+   "file": "test_solution.py",
+   "line": 59,
+   "title": "Undefined Decimal in test_sum_equals_total",
+   "rationale": "Decimal is used in test_sum_equals_total but not imported in test_solution.py, causing a NameError.",
+   "suggested_fix": "Import Decimal from decimal at the top of test_solution.py.",
+   "evidence": "FAILED test_solution.py::test_sum_equals_total - NameError: name 'Decimal' is not defined",
+   "standard_ref": "",
+   "id": "F2",
+   "iteration": 1,
+   "blocking": false,
+   "status": "fixed",
+   "history": [
+    {
+     "iteration": 1,
+     "actor": "reviewer",
+     "status": "open",
+     "reason": ""
+    },
+    {
+     "iteration": 1,
+     "actor": "generator",
+     "status": "accepted",
+     "reason": "Imported Decimal to resolve NameError."
+    },
+    {
+     "iteration": 2,
+     "actor": "orchestrator",
+     "status": "fixed",
+     "reason": "revision kept (no regression)"
+    }
+   ],
+   "injected": false
+  },
+  {
+   "severity": "minor",
+   "category": "style",
+   "file": "solution.py",
+   "line": 32,
+   "title": "Raise exception without from err",
+   "rationale": "Ruff check B904 points out that within an except clause, exceptions should be raised using 'from err' or 'from None'.",
+   "suggested_fix": "Change line 32 to raise ValueError(...) from exc.",
+   "evidence": "Ruff: B904 Within an except clause, raise exceptions with `raise ... from err`",
+   "standard_ref": "",
+   "id": "F3",
+   "iteration": 1,
+   "blocking": false,
+   "status": "fixed",
+   "history": [
+    {
+     "iteration": 1,
+     "actor": "reviewer",
+     "status": "open",
+     "reason": ""
+    },
+    {
+     "iteration": 1,
+     "actor": "generator",
+     "status": "accepted",
+     "reason": "Added explicit exception chaining to satisfy lint rule."
+    },
+    {
+     "iteration": 2,
+     "actor": "orchestrator",
+     "status": "fixed",
+     "reason": "revision kept (no regression)"
+    }
+   ],
+   "injected": false
+  }
+ ],
+ "tool_calls": [
+  {
+   "iteration": 1,
+   "tool": "run_tests",
+   "is_error": false,
+   "seconds": 0.66,
+   "arguments": {
+    "solution_code": "from decimal import Decimal, ROUND_DOWN\n\n\ndef split_bill(total_str, people):\n    \"\"\"Split a bill evenly between peopl...",
+    "test_code": "import pytest\nfrom solution import split_bill\n\n# Normal cases\n\ndef test_even_split():\n    assert split_bill(\"100.00\",..."
+   },
+   "result": "{\n  \"status\": \"failed\",\n  \"passed\": 9,\n  \"failed\": 2,\n  \"tests\": [\n    {\n      \"name\": \"test_even_split\",\n      \"outc..."
+  },
+  {
+   "iteration": 1,
+   "tool": "run_static_analysis",
+   "is_error": false,
+   "seconds": 0.1,
+   "arguments": {
+    "solution_code": "from decimal import Decimal, ROUND_DOWN\n\n\ndef split_bill(total_str, people):\n    \"\"\"Split a bill evenly between peopl...",
+    "test_code": "import pytest\nfrom solution import split_bill\n\n# Normal cases\n\ndef test_even_split():\n    assert split_bill(\"100.00\",..."
+   },
+   "result": "{\n  \"status\": \"issues\",\n  \"blocking_count\": 3,\n  \"advisory_count\": 0,\n  \"issues\": [\n    {\n      \"code\": \"B904\",\n     ..."
+  },
+  {
+   "iteration": 1,
+   "tool": "review_code",
+   "is_error": false,
+   "seconds": 3.2,
+   "arguments": {
+    "task": "Write a function called `split_bill` that splits a restaurant bill evenly between a number of people. It takes the\nto...",
+    "solution_code": "from decimal import Decimal, ROUND_DOWN\n\n\ndef split_bill(total_str, people):\n    \"\"\"Split a bill evenly between peopl...",
+    "test_code": "import pytest\nfrom solution import split_bill\n\n# Normal cases\n\ndef test_even_split():\n    assert split_bill(\"100.00\",...",
+    "test_results": "{\"status\": \"failed\", \"passed\": 9, \"failed\": 2, \"tests\": [{\"name\": \"test_even_split\", \"outcome\": \"passed\", \"message\": ...",
+    "lint_results": "{\"status\": \"issues\", \"blocking_count\": 3, \"advisory_count\": 0, \"issues\": [{\"code\": \"B904\", \"message\": \"Within an `exc...",
+    "ledger": "[]"
+   },
+   "result": "{\n  \"review\": {\n    \"summary\": \"The code implements the required bill splitting logic, but has test failures due to a..."
+  },
+  {
+   "iteration": 2,
+   "tool": "run_tests",
+   "is_error": false,
+   "seconds": 0.64,
+   "arguments": {
+    "solution_code": "from decimal import Decimal, ROUND_DOWN\n\n\ndef split_bill(total_str, people):\n    \"\"\"Split a bill evenly between peopl...",
+    "test_code": "import pytest\nfrom decimal import Decimal\nfrom solution import split_bill\n\n# Normal cases\n\ndef test_even_split():\n   ..."
+   },
+   "result": "{\n  \"status\": \"passed\",\n  \"passed\": 11,\n  \"failed\": 0,\n  \"tests\": [\n    {\n      \"name\": \"test_even_split\",\n      \"out..."
+  },
+  {
+   "iteration": 2,
+   "tool": "run_static_analysis",
+   "is_error": false,
+   "seconds": 0.12,
+   "arguments": {
+    "solution_code": "from decimal import Decimal, ROUND_DOWN\n\n\ndef split_bill(total_str, people):\n    \"\"\"Split a bill evenly between peopl...",
+    "test_code": "import pytest\nfrom decimal import Decimal\nfrom solution import split_bill\n\n# Normal cases\n\ndef test_even_split():\n   ..."
+   },
+   "result": "{\n  \"status\": \"clean\",\n  \"blocking_count\": 0,\n  \"advisory_count\": 0,\n  \"issues\": []\n}"
+  },
+  {
+   "iteration": 2,
+   "tool": "review_code",
+   "is_error": false,
+   "seconds": 1.27,
+   "arguments": {
+    "task": "Write a function called `split_bill` that splits a restaurant bill evenly between a number of people. It takes the\nto...",
+    "solution_code": "from decimal import Decimal, ROUND_DOWN\n\n\ndef split_bill(total_str, people):\n    \"\"\"Split a bill evenly between peopl...",
+    "test_code": "import pytest\nfrom decimal import Decimal\nfrom solution import split_bill\n\n# Normal cases\n\ndef test_even_split():\n   ...",
+    "test_results": "{\"status\": \"passed\", \"passed\": 11, \"failed\": 0, \"tests\": [{\"name\": \"test_even_split\", \"outcome\": \"passed\", \"message\":...",
+    "lint_results": "{\"status\": \"clean\", \"blocking_count\": 0, \"advisory_count\": 0, \"issues\": []}",
+    "ledger": "[{\"id\": \"F1\", \"round\": 1, \"severity\": \"major\", \"file\": \"test_solution.py\", \"line\": 21, \"title\": \"Incorrect test expec..."
+   },
+   "result": "{\n  \"review\": {\n    \"summary\": \"The code and tests are fully correct, pass all static analysis checks, and meet all f..."
+  }
+ ],
+ "usage": {
+  "generator": {
+   "prompt_tokens": 2821,
+   "completion_tokens": 1980,
+   "calls": 2,
+   "cached_calls": 1,
+   "model": "openai/gpt-oss-20b"
+  },
+  "reviewer": {
+   "prompt_tokens": 5329,
+   "completion_tokens": 710,
+   "calls": 2,
+   "cached_calls": 0,
+   "model": "gemini-3.5-flash-lite"
+  }
+ },
+ "final_unresolved_blocking": [],
+ "escalated_to_human": [],
+ "evaluation": {
+  "baseline": {
+   "all_passed": true,
+   "passed": 8,
+   "total": 8,
+   "failing": []
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 8,
+   "total": 8,
+   "failing": []
+  },
+  "baseline_lint_blocking": 3,
+  "final_lint_blocking": 0
+ }
+}

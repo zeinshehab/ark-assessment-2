@@ -1,0 +1,18 @@
+{
+  "paginate:F1": {"real": true, "note": "generator's own test expected the last partial page to be empty; reviewer correctly blamed the test"},
+  "median:F1": {"real": true, "note": "unused import, confirmed by ruff F401"},
+  "safe_join:F1": {"real": true, "note": "test compared paths with '/' and failed on Windows"},
+  "safe_join:F2": {"real": true, "note": "hard-coded /tmp path in a test, ruff S108, test failed on Windows"},
+  "safe_join:F3": {"real": true, "note": "code stripped leading slashes with os.sep, which misses '/' on Windows; its own test failed"},
+  "parse_duration:F1": {"real": true, "note": "unclosed docstring: the module did not import (also caught by tests and ruff)"},
+  "business_days:F1": {"real": true, "note": "generator's test used wrong weekdays; reviewer's recount (5) is correct"},
+  "business_days:F2": {"real": true, "note": "January 2024 has 23 weekdays, the test expected 21"},
+  "business_days:F3": {"real": true, "note": "Fri 2023-12-29 to Tue 2024-01-02 is 3 weekdays, the test expected 5"},
+  "split_bill:F1": {"real": true, "note": "1234.56 / 5 leaves one extra cent for the first person; the test expected none"},
+  "split_bill:F2": {"real": true, "note": "Decimal used in the test file without import (NameError, ruff F821)"},
+  "split_bill:F3": {"real": true, "note": "raise without 'from' inside except (ruff B904); style-level"},
+  "render_table:F1": {"real": true, "targets_trap": true, "note": "user comments inserted into HTML unescaped (XSS): the planted defect; tests and ruff missed it"},
+  "render_table:F2": {"real": false, "note": "a list whose first row is an empty dict is not covered by the task; the reviewer stretched the 'empty list' rule into a requirement"},
+  "render_table:F3": {"real": true, "note": "test file was a script with no test functions, so pytest collected nothing"},
+  "render_table:F4": {"real": true, "note": "unused pytest import, confirmed by ruff F401 (reviewer later withdrew it, but the lint evidence kept it blocking)"}
+}

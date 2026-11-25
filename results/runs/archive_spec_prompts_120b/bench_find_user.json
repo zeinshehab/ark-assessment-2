@@ -1,0 +1,299 @@
+{
+ "task_id": "find_user",
+ "task": "Write a function `find_user(conn: sqlite3.Connection, username: str) -> dict | None` that looks up a user in a SQLite\ndatabase. The database has a table `users(id INTEGER PRIMARY KEY, username TEXT, email TEXT)`.\nReturn `{\"id\": ..., \"username\": ..., \"email\": ...}` for the user whose username is exactly `username`, or `None` if\nthere is no such user. `username` comes directly from a web form and may contain any characters, including quotes.\n",
+ "started": "2026-11-25 15:49:12",
+ "generator_model": "openai/gpt-oss-120b",
+ "reviewer_model": "gemini-3.5-flash-lite",
+ "inject_wrong_finding": false,
+ "iterations": [
+  {
+   "iteration": 1,
+   "diff": "",
+   "reverted": false,
+   "code": {
+    "solution_code": "import sqlite3\nfrom typing import Optional, Dict\n\ndef find_user(conn: sqlite3.Connection, username: str) -> Optional[Dict[str, object]]:\n    \"\"\"Return a dict with user data for the given *username* or ``None``.\n\n    The function uses a parameterised query to avoid SQL injection, because\n    *username* may contain any characters, including quotes.\n\n    Parameters\n    ----------\n    conn:\n        An open :class:`sqlite3.Connection` to a database that contains a\n        ``users`` table with columns ``id``, ``username`` and ``email``.\n    username:\n        The exact username to look up.\n\n    Returns\n    -------\n    dict | None\n        ``{\"id\": ..., \"username\": ..., \"email\": ...}`` if a matching row is\n        found, otherwise ``None``.\n    \"\"\"\n    cur = conn.cursor()\n    # Use a parameterised query to safely handle any characters in username.\n    cur.execute(\"SELECT id, username, email FROM users WHERE username = ?\", (username,))\n    row = cur.fetchone()\n    if row is None:\n        return None\n    user_id, user_name, email = row\n    return {\"id\": user_id, \"username\": user_name, \"email\": email}\n",
+    "test_code": "import sqlite3\nimport pytest\nfrom solution import find_user\n\ndef setup_db():\n    conn = sqlite3.connect(\":memory:\")\n    cur = conn.cursor()\n    cur.execute(\n        \"\"\"\n        CREATE TABLE users (\n            id INTEGER PRIMARY KEY,\n            username TEXT,\n            email TEXT\n        )\n        \"\"\"\n    )\n    # Insert sample users, including one with special characters.\n    users = [\n        (1, \"alice\", \"alice@example.com\"),\n        (2, \"bob\", \"bob@example.com\"),\n        (3, \"charlie's\", \"charlie@example.com\"),  # username contains a quote\n    ]\n    cur.executemany(\"INSERT INTO users (id, username, email) VALUES (?, ?, ?)\", users)\n    conn.commit()\n    return conn\n\ndef test_find_existing_user():\n    conn = setup_db()\n    result = find_user(conn, \"alice\")\n    assert result == {\"id\": 1, \"username\": \"alice\", \"email\": \"alice@example.com\"}\n\ndef test_find_user_with_special_characters():\n    conn = setup_db()\n    # Username contains a single quote; ensure it is handled safely.\n    result = find_user(conn, \"charlie's\")\n    assert result == {\"id\": 3, \"username\": \"charlie's\", \"email\": \"charlie@example.com\"}\n\ndef test_user_not_found_returns_none():\n    conn = setup_db()\n    result = find_user(conn, \"nonexistent\")\n    assert result is None\n\ndef test_sql_injection_is_prevented():\n    conn = setup_db()\n    # Attempt an injection; it should be treated as a literal username.\n    malicious = \"alice' OR '1'='1\"\n    result = find_user(conn, malicious)\n    assert result is None\n    # Ensure the original user is still present.\n    assert find_user(conn, \"alice\") == {\"id\": 1, \"username\": \"alice\", \"email\": \"alice@example.com\"}\n\ndef test_empty_username():\n    conn = setup_db()\n    # No user with empty username was inserted.\n    assert find_user(conn, \"\") is None\n\n# Ensure the function raises no unexpected exceptions for None input types.\ndef test_invalid_username_type():\n    conn = setup_db()\n    with pytest.raises(TypeError):\n        # Passing None where a string is expected should raise TypeError due to sqlite param handling.\n        find_user(conn, None)  # type: ignore\n\n# Clean up connections after each test.\n@pytest.fixture(autouse=True)\ndef close_conn(request):\n    yield\n    # request.node is the test function; if it created a conn attribute, close it.\n    conn = getattr(request.node, \"funcargs\", {}).get(\"conn\")\n    if isinstance(conn, sqlite3.Connection):\n        conn.close()\n"
+   },
+   "test_results": {
+    "status": "failed",
+    "passed": 5,
+    "failed": 1,
+    "tests": [
+     {
+      "name": "test_find_existing_user",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_find_user_with_special_characters",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_user_not_found_returns_none",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sql_injection_is_prevented",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_empty_username",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_username_type",
+      "outcome": "failed",
+      "message": "Failed: DID NOT RAISE TypeError"
+     }
+    ],
+    "output": ".....F                                                                   [100%]\n================================== FAILURES ===================================\n_________________________ test_invalid_username_type __________________________\n\n    def test_invalid_username_type():\n        conn = setup_db()\n>       with pytest.raises(TypeError):\n             ^^^^^^^^^^^^^^^^^^^^^^^^\nE       Failed: DID NOT RAISE TypeError\n\ntest_solution.py:60: Failed\n=========================== short test summary info ===========================\nFAILED test_solution.py::test_invalid_username_type - Failed: DID NOT RAISE T...\n1 failed, 5 passed in 0.18s\n"
+   },
+   "lint_results": {
+    "status": "clean",
+    "blocking_count": 0,
+    "advisory_count": 0,
+    "issues": []
+   },
+   "review_summary": "The implementation correctly uses parameterized queries to fetch the user securely. However, the test suite contains a failing test because passing None as a username to sqlite3 does not raise TypeError in Python's sqlite3 module; it is converted to NULL in SQL and executed successfully. Additionally, cursor resources should be explicitly closed or managed.",
+   "new_findings": [
+    "F1"
+   ],
+   "standard_sections": [
+    "CS-4",
+    "CS-3",
+    "CS-9",
+    "CS-1"
+   ],
+   "generator_decisions": [
+    {
+     "finding_id": "F1",
+     "decision": "accept",
+     "reason": "The test expects a TypeError when username is None, which the current implementation does not raise. Adding an explicit type check in find_user to raise TypeError for non\u2011string usernames satisfies the test and aligns with the intended robust handling of input."
+    }
+   ]
+  },
+  {
+   "iteration": 2,
+   "diff": "--- a/solution.py\n+++ b/solution.py\n@@ -1,5 +1,6 @@\n import sqlite3\n from typing import Optional, Dict\n+\n \n def find_user(conn: sqlite3.Connection, username: str) -> Optional[Dict[str, object]]:\n     \"\"\"Return a dict with user data for the given *username* or ``None``.\n@@ -21,6 +22,10 @@\n         ``{\"id\": ..., \"username\": ..., \"email\": ...}`` if a matching row is\n         found, otherwise ``None``.\n     \"\"\"\n+    # Validate input type to match test expectations.\n+    if not isinstance(username, str):\n+        raise TypeError(\"username must be a string\")\n+\n     cur = conn.cursor()\n     # Use a parameterised query to safely handle any characters in username.\n     cur.execute(\"SELECT id, username, email FROM users WHERE username = ?\", (username,))\n--- a/test_solution.py\n+++ b/test_solution.py\n@@ -1,6 +1,7 @@\n import sqlite3\n import pytest\n from solution import find_user\n+\n \n def setup_db():\n     conn = sqlite3.connect(\":memory:\")\n@@ -24,10 +25,12 @@\n     conn.commit()\n     return conn\n \n+\n def test_find_existing_user():\n     conn = setup_db()\n     result = find_user(conn, \"alice\")\n     assert result == {\"id\": 1, \"username\": \"alice\", \"email\": \"alice@example.com\"}\n+\n \n def test_find_user_with_special_characters():\n     conn = setup_db()\n@@ -35,10 +38,12 @@\n     result = find_user(conn, \"charlie's\")\n     assert result == {\"id\": 3, \"username\": \"charlie's\", \"email\": \"charlie@example.com\"}\n \n+\n def test_user_not_found_returns_none():\n     conn = setup_db()\n     result = find_user(conn, \"nonexistent\")\n     assert result is None\n+\n \n def test_sql_injection_is_prevented():\n     conn = setup_db()\n@@ -49,6 +54,7 @@\n     # Ensure the original user is still present.\n     assert find_user(conn, \"alice\") == {\"id\": 1, \"username\": \"alice\", \"email\": \"alice@example.com\"}\n \n+\n def test_empty_username():\n     conn = setup_db()\n     # No user with empty username was inserted.\n@@ -58,7 +64,7 @@\n def test_invalid_username_type():\n     conn = setup_db()\n     with pytest.raises(TypeError):\n-        # Passing None where a string is expected should raise TypeError due to sqlite param handling.\n+        # Passing None where a string is expected should raise TypeError due to explicit check.\n         find_user(conn, None)  # type: ignore\n \n # Clean up connections after each test.",
+   "reverted": false,
+   "code": {
+    "solution_code": "import sqlite3\nfrom typing import Optional, Dict\n\n\ndef find_user(conn: sqlite3.Connection, username: str) -> Optional[Dict[str, object]]:\n    \"\"\"Return a dict with user data for the given *username* or ``None``.\n\n    The function uses a parameterised query to avoid SQL injection, because\n    *username* may contain any characters, including quotes.\n\n    Parameters\n    ----------\n    conn:\n        An open :class:`sqlite3.Connection` to a database that contains a\n        ``users`` table with columns ``id``, ``username`` and ``email``.\n    username:\n        The exact username to look up.\n\n    Returns\n    -------\n    dict | None\n        ``{\"id\": ..., \"username\": ..., \"email\": ...}`` if a matching row is\n        found, otherwise ``None``.\n    \"\"\"\n    # Validate input type to match test expectations.\n    if not isinstance(username, str):\n        raise TypeError(\"username must be a string\")\n\n    cur = conn.cursor()\n    # Use a parameterised query to safely handle any characters in username.\n    cur.execute(\"SELECT id, username, email FROM users WHERE username = ?\", (username,))\n    row = cur.fetchone()\n    if row is None:\n        return None\n    user_id, user_name, email = row\n    return {\"id\": user_id, \"username\": user_name, \"email\": email}\n",
+    "test_code": "import sqlite3\nimport pytest\nfrom solution import find_user\n\n\ndef setup_db():\n    conn = sqlite3.connect(\":memory:\")\n    cur = conn.cursor()\n    cur.execute(\n        \"\"\"\n        CREATE TABLE users (\n            id INTEGER PRIMARY KEY,\n            username TEXT,\n            email TEXT\n        )\n        \"\"\"\n    )\n    # Insert sample users, including one with special characters.\n    users = [\n        (1, \"alice\", \"alice@example.com\"),\n        (2, \"bob\", \"bob@example.com\"),\n        (3, \"charlie's\", \"charlie@example.com\"),  # username contains a quote\n    ]\n    cur.executemany(\"INSERT INTO users (id, username, email) VALUES (?, ?, ?)\", users)\n    conn.commit()\n    return conn\n\n\ndef test_find_existing_user():\n    conn = setup_db()\n    result = find_user(conn, \"alice\")\n    assert result == {\"id\": 1, \"username\": \"alice\", \"email\": \"alice@example.com\"}\n\n\ndef test_find_user_with_special_characters():\n    conn = setup_db()\n    # Username contains a single quote; ensure it is handled safely.\n    result = find_user(conn, \"charlie's\")\n    assert result == {\"id\": 3, \"username\": \"charlie's\", \"email\": \"charlie@example.com\"}\n\n\ndef test_user_not_found_returns_none():\n    conn = setup_db()\n    result = find_user(conn, \"nonexistent\")\n    assert result is None\n\n\ndef test_sql_injection_is_prevented():\n    conn = setup_db()\n    # Attempt an injection; it should be treated as a literal username.\n    malicious = \"alice' OR '1'='1\"\n    result = find_user(conn, malicious)\n    assert result is None\n    # Ensure the original user is still present.\n    assert find_user(conn, \"alice\") == {\"id\": 1, \"username\": \"alice\", \"email\": \"alice@example.com\"}\n\n\ndef test_empty_username():\n    conn = setup_db()\n    # No user with empty username was inserted.\n    assert find_user(conn, \"\") is None\n\n# Ensure the function raises no unexpected exceptions for None input types.\ndef test_invalid_username_type():\n    conn = setup_db()\n    with pytest.raises(TypeError):\n        # Passing None where a string is expected should raise TypeError due to explicit check.\n        find_user(conn, None)  # type: ignore\n\n# Clean up connections after each test.\n@pytest.fixture(autouse=True)\ndef close_conn(request):\n    yield\n    # request.node is the test function; if it created a conn attribute, close it.\n    conn = getattr(request.node, \"funcargs\", {}).get(\"conn\")\n    if isinstance(conn, sqlite3.Connection):\n        conn.close()\n"
+   },
+   "test_results": {
+    "status": "passed",
+    "passed": 6,
+    "failed": 0,
+    "tests": [
+     {
+      "name": "test_find_existing_user",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_find_user_with_special_characters",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_user_not_found_returns_none",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sql_injection_is_prevented",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_empty_username",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_username_type",
+      "outcome": "passed",
+      "message": ""
+     }
+    ],
+    "output": "......                                                                   [100%]\n6 passed in 0.10s\n"
+   },
+   "lint_results": {
+    "status": "clean",
+    "blocking_count": 0,
+    "advisory_count": 0,
+    "issues": []
+   },
+   "review_summary": "The solution and tests are correct, fully compliant with the coding standards, and pass all static analysis and test suites successfully.",
+   "new_findings": [],
+   "standard_sections": [
+    "CS-4",
+    "CS-1",
+    "CS-3",
+    "CS-9"
+   ]
+  }
+ ],
+ "status": "converged",
+ "error": null,
+ "baseline": {
+  "solution_code": "import sqlite3\nfrom typing import Optional, Dict\n\ndef find_user(conn: sqlite3.Connection, username: str) -> Optional[Dict[str, object]]:\n    \"\"\"Return a dict with user data for the given *username* or ``None``.\n\n    The function uses a parameterised query to avoid SQL injection, because\n    *username* may contain any characters, including quotes.\n\n    Parameters\n    ----------\n    conn:\n        An open :class:`sqlite3.Connection` to a database that contains a\n        ``users`` table with columns ``id``, ``username`` and ``email``.\n    username:\n        The exact username to look up.\n\n    Returns\n    -------\n    dict | None\n        ``{\"id\": ..., \"username\": ..., \"email\": ...}`` if a matching row is\n        found, otherwise ``None``.\n    \"\"\"\n    cur = conn.cursor()\n    # Use a parameterised query to safely handle any characters in username.\n    cur.execute(\"SELECT id, username, email FROM users WHERE username = ?\", (username,))\n    row = cur.fetchone()\n    if row is None:\n        return None\n    user_id, user_name, email = row\n    return {\"id\": user_id, \"username\": user_name, \"email\": email}\n",
+  "test_code": "import sqlite3\nimport pytest\nfrom solution import find_user\n\ndef setup_db():\n    conn = sqlite3.connect(\":memory:\")\n    cur = conn.cursor()\n    cur.execute(\n        \"\"\"\n        CREATE TABLE users (\n            id INTEGER PRIMARY KEY,\n            username TEXT,\n            email TEXT\n        )\n        \"\"\"\n    )\n    # Insert sample users, including one with special characters.\n    users = [\n        (1, \"alice\", \"alice@example.com\"),\n        (2, \"bob\", \"bob@example.com\"),\n        (3, \"charlie's\", \"charlie@example.com\"),  # username contains a quote\n    ]\n    cur.executemany(\"INSERT INTO users (id, username, email) VALUES (?, ?, ?)\", users)\n    conn.commit()\n    return conn\n\ndef test_find_existing_user():\n    conn = setup_db()\n    result = find_user(conn, \"alice\")\n    assert result == {\"id\": 1, \"username\": \"alice\", \"email\": \"alice@example.com\"}\n\ndef test_find_user_with_special_characters():\n    conn = setup_db()\n    # Username contains a single quote; ensure it is handled safely.\n    result = find_user(conn, \"charlie's\")\n    assert result == {\"id\": 3, \"username\": \"charlie's\", \"email\": \"charlie@example.com\"}\n\ndef test_user_not_found_returns_none():\n    conn = setup_db()\n    result = find_user(conn, \"nonexistent\")\n    assert result is None\n\ndef test_sql_injection_is_prevented():\n    conn = setup_db()\n    # Attempt an injection; it should be treated as a literal username.\n    malicious = \"alice' OR '1'='1\"\n    result = find_user(conn, malicious)\n    assert result is None\n    # Ensure the original user is still present.\n    assert find_user(conn, \"alice\") == {\"id\": 1, \"username\": \"alice\", \"email\": \"alice@example.com\"}\n\ndef test_empty_username():\n    conn = setup_db()\n    # No user with empty username was inserted.\n    assert find_user(conn, \"\") is None\n\n# Ensure the function raises no unexpected exceptions for None input types.\ndef test_invalid_username_type():\n    conn = setup_db()\n    with pytest.raises(TypeError):\n        # Passing None where a string is expected should raise TypeError due to sqlite param handling.\n        find_user(conn, None)  # type: ignore\n\n# Clean up connections after each test.\n@pytest.fixture(autouse=True)\ndef close_conn(request):\n    yield\n    # request.node is the test function; if it created a conn attribute, close it.\n    conn = getattr(request.node, \"funcargs\", {}).get(\"conn\")\n    if isinstance(conn, sqlite3.Connection):\n        conn.close()\n"
+ },
+ "final": {
+  "solution_code": "import sqlite3\nfrom typing import Optional, Dict\n\n\ndef find_user(conn: sqlite3.Connection, username: str) -> Optional[Dict[str, object]]:\n    \"\"\"Return a dict with user data for the given *username* or ``None``.\n\n    The function uses a parameterised query to avoid SQL injection, because\n    *username* may contain any characters, including quotes.\n\n    Parameters\n    ----------\n    conn:\n        An open :class:`sqlite3.Connection` to a database that contains a\n        ``users`` table with columns ``id``, ``username`` and ``email``.\n    username:\n        The exact username to look up.\n\n    Returns\n    -------\n    dict | None\n        ``{\"id\": ..., \"username\": ..., \"email\": ...}`` if a matching row is\n        found, otherwise ``None``.\n    \"\"\"\n    # Validate input type to match test expectations.\n    if not isinstance(username, str):\n        raise TypeError(\"username must be a string\")\n\n    cur = conn.cursor()\n    # Use a parameterised query to safely handle any characters in username.\n    cur.execute(\"SELECT id, username, email FROM users WHERE username = ?\", (username,))\n    row = cur.fetchone()\n    if row is None:\n        return None\n    user_id, user_name, email = row\n    return {\"id\": user_id, \"username\": user_name, \"email\": email}\n",
+  "test_code": "import sqlite3\nimport pytest\nfrom solution import find_user\n\n\ndef setup_db():\n    conn = sqlite3.connect(\":memory:\")\n    cur = conn.cursor()\n    cur.execute(\n        \"\"\"\n        CREATE TABLE users (\n            id INTEGER PRIMARY KEY,\n            username TEXT,\n            email TEXT\n        )\n        \"\"\"\n    )\n    # Insert sample users, including one with special characters.\n    users = [\n        (1, \"alice\", \"alice@example.com\"),\n        (2, \"bob\", \"bob@example.com\"),\n        (3, \"charlie's\", \"charlie@example.com\"),  # username contains a quote\n    ]\n    cur.executemany(\"INSERT INTO users (id, username, email) VALUES (?, ?, ?)\", users)\n    conn.commit()\n    return conn\n\n\ndef test_find_existing_user():\n    conn = setup_db()\n    result = find_user(conn, \"alice\")\n    assert result == {\"id\": 1, \"username\": \"alice\", \"email\": \"alice@example.com\"}\n\n\ndef test_find_user_with_special_characters():\n    conn = setup_db()\n    # Username contains a single quote; ensure it is handled safely.\n    result = find_user(conn, \"charlie's\")\n    assert result == {\"id\": 3, \"username\": \"charlie's\", \"email\": \"charlie@example.com\"}\n\n\ndef test_user_not_found_returns_none():\n    conn = setup_db()\n    result = find_user(conn, \"nonexistent\")\n    assert result is None\n\n\ndef test_sql_injection_is_prevented():\n    conn = setup_db()\n    # Attempt an injection; it should be treated as a literal username.\n    malicious = \"alice' OR '1'='1\"\n    result = find_user(conn, malicious)\n    assert result is None\n    # Ensure the original user is still present.\n    assert find_user(conn, \"alice\") == {\"id\": 1, \"username\": \"alice\", \"email\": \"alice@example.com\"}\n\n\ndef test_empty_username():\n    conn = setup_db()\n    # No user with empty username was inserted.\n    assert find_user(conn, \"\") is None\n\n# Ensure the function raises no unexpected exceptions for None input types.\ndef test_invalid_username_type():\n    conn = setup_db()\n    with pytest.raises(TypeError):\n        # Passing None where a string is expected should raise TypeError due to explicit check.\n        find_user(conn, None)  # type: ignore\n\n# Clean up connections after each test.\n@pytest.fixture(autouse=True)\ndef close_conn(request):\n    yield\n    # request.node is the test function; if it created a conn attribute, close it.\n    conn = getattr(request.node, \"funcargs\", {}).get(\"conn\")\n    if isinstance(conn, sqlite3.Connection):\n        conn.close()\n"
+ },
+ "findings": [
+  {
+   "severity": "minor",
+   "category": "test_gap",
+   "file": "test_solution.py",
+   "line": 60,
+   "title": "Incorrect expectation for None username input type",
+   "rationale": "Passing None to sqlite3 parameters does not raise a TypeError; sqlite3 treats it as a SQL NULL. Therefore, test_invalid_username_type fails. If a TypeError or ValueError is required for None, it should be validated explicitly in the function.",
+   "suggested_fix": "Either update the test to expect the actual behavior (e.g., returning None or querying for NULL), or add an explicit type/None check in solution.py to raise TypeError/ValueError as desired.",
+   "evidence": "E       Failed: DID NOT RAISE TypeError\ntest_solution.py:60: Failed",
+   "standard_ref": "CS-9",
+   "id": "F1",
+   "iteration": 1,
+   "blocking": false,
+   "status": "fixed",
+   "history": [
+    {
+     "iteration": 1,
+     "actor": "reviewer",
+     "status": "open",
+     "reason": ""
+    },
+    {
+     "iteration": 1,
+     "actor": "generator",
+     "status": "accepted",
+     "reason": "The test expects a TypeError when username is None, which the current implementation does not raise. Adding an explicit type check in find_user to raise TypeError for non\u2011string usernames satisfies the test and aligns with the intended robust handling of input."
+    },
+    {
+     "iteration": 2,
+     "actor": "orchestrator",
+     "status": "fixed",
+     "reason": "revision kept (no regression)"
+    }
+   ],
+   "injected": false
+  }
+ ],
+ "tool_calls": [
+  {
+   "iteration": 1,
+   "tool": "run_tests",
+   "is_error": false,
+   "seconds": 0.71,
+   "arguments": {
+    "solution_code": "import sqlite3\nfrom typing import Optional, Dict\n\ndef find_user(conn: sqlite3.Connection, username: str) -> Optional[...",
+    "test_code": "import sqlite3\nimport pytest\nfrom solution import find_user\n\ndef setup_db():\n    conn = sqlite3.connect(\":memory:\")\n ..."
+   },
+   "result": "{\n  \"status\": \"failed\",\n  \"passed\": 5,\n  \"failed\": 1,\n  \"tests\": [\n    {\n      \"name\": \"test_find_existing_user\",\n   ..."
+  },
+  {
+   "iteration": 1,
+   "tool": "run_static_analysis",
+   "is_error": false,
+   "seconds": 0.11,
+   "arguments": {
+    "solution_code": "import sqlite3\nfrom typing import Optional, Dict\n\ndef find_user(conn: sqlite3.Connection, username: str) -> Optional[...",
+    "test_code": "import sqlite3\nimport pytest\nfrom solution import find_user\n\ndef setup_db():\n    conn = sqlite3.connect(\":memory:\")\n ..."
+   },
+   "result": "{\n  \"status\": \"clean\",\n  \"blocking_count\": 0,\n  \"advisory_count\": 0,\n  \"issues\": []\n}"
+  },
+  {
+   "iteration": 1,
+   "tool": "review_code",
+   "is_error": false,
+   "seconds": 2.73,
+   "arguments": {
+    "task": "Write a function `find_user(conn: sqlite3.Connection, username: str) -> dict | None` that looks up a user in a SQLite...",
+    "solution_code": "import sqlite3\nfrom typing import Optional, Dict\n\ndef find_user(conn: sqlite3.Connection, username: str) -> Optional[...",
+    "test_code": "import sqlite3\nimport pytest\nfrom solution import find_user\n\ndef setup_db():\n    conn = sqlite3.connect(\":memory:\")\n ...",
+    "test_results": "{\"status\": \"failed\", \"passed\": 5, \"failed\": 1, \"tests\": [{\"name\": \"test_find_existing_user\", \"outcome\": \"passed\", \"me...",
+    "lint_results": "{\"status\": \"clean\", \"blocking_count\": 0, \"advisory_count\": 0, \"issues\": []}",
+    "ledger": "[]"
+   },
+   "result": "{\n  \"review\": {\n    \"summary\": \"The implementation correctly uses parameterized queries to fetch the user securely. H..."
+  },
+  {
+   "iteration": 2,
+   "tool": "run_tests",
+   "is_error": false,
+   "seconds": 0.62,
+   "arguments": {
+    "solution_code": "import sqlite3\nfrom typing import Optional, Dict\n\n\ndef find_user(conn: sqlite3.Connection, username: str) -> Optional...",
+    "test_code": "import sqlite3\nimport pytest\nfrom solution import find_user\n\n\ndef setup_db():\n    conn = sqlite3.connect(\":memory:\")\n..."
+   },
+   "result": "{\n  \"status\": \"passed\",\n  \"passed\": 6,\n  \"failed\": 0,\n  \"tests\": [\n    {\n      \"name\": \"test_find_existing_user\",\n   ..."
+  },
+  {
+   "iteration": 2,
+   "tool": "run_static_analysis",
+   "is_error": false,
+   "seconds": 0.1,
+   "arguments": {
+    "solution_code": "import sqlite3\nfrom typing import Optional, Dict\n\n\ndef find_user(conn: sqlite3.Connection, username: str) -> Optional...",
+    "test_code": "import sqlite3\nimport pytest\nfrom solution import find_user\n\n\ndef setup_db():\n    conn = sqlite3.connect(\":memory:\")\n..."
+   },
+   "result": "{\n  \"status\": \"clean\",\n  \"blocking_count\": 0,\n  \"advisory_count\": 0,\n  \"issues\": []\n}"
+  },
+  {
+   "iteration": 2,
+   "tool": "review_code",
+   "is_error": false,
+   "seconds": 1.39,
+   "arguments": {
+    "task": "Write a function `find_user(conn: sqlite3.Connection, username: str) -> dict | None` that looks up a user in a SQLite...",
+    "solution_code": "import sqlite3\nfrom typing import Optional, Dict\n\n\ndef find_user(conn: sqlite3.Connection, username: str) -> Optional...",
+    "test_code": "import sqlite3\nimport pytest\nfrom solution import find_user\n\n\ndef setup_db():\n    conn = sqlite3.connect(\":memory:\")\n...",
+    "test_results": "{\"status\": \"passed\", \"passed\": 6, \"failed\": 0, \"tests\": [{\"name\": \"test_find_existing_user\", \"outcome\": \"passed\", \"me...",
+    "lint_results": "{\"status\": \"clean\", \"blocking_count\": 0, \"advisory_count\": 0, \"issues\": []}",
+    "ledger": "[{\"id\": \"F1\", \"round\": 1, \"severity\": \"minor\", \"file\": \"test_solution.py\", \"line\": 60, \"title\": \"Incorrect expectatio..."
+   },
+   "result": "{\n  \"review\": {\n    \"summary\": \"The solution and tests are correct, fully compliant with the coding standards, and pa..."
+  }
+ ],
+ "usage": {
+  "generator": {
+   "prompt_tokens": 2348,
+   "completion_tokens": 2169,
+   "calls": 2,
+   "cached_calls": 1,
+   "model": "openai/gpt-oss-120b"
+  },
+  "reviewer": {
+   "prompt_tokens": 4780,
+   "completion_tokens": 345,
+   "calls": 2,
+   "cached_calls": 0,
+   "model": "gemini-3.5-flash-lite"
+  }
+ },
+ "final_unresolved_blocking": [],
+ "escalated_to_human": [],
+ "evaluation": {
+  "baseline": {
+   "all_passed": true,
+   "passed": 6,
+   "total": 6,
+   "failing": []
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 6,
+   "total": 6,
+   "failing": []
+  },
+  "baseline_lint_blocking": 0,
+  "final_lint_blocking": 0
+ }
+}

@@ -1,0 +1,743 @@
+{
+ "task_id": "parse_duration",
+ "task": "People type durations into our timer app, like \"1h30m\", \"45s\" or \"1h 30m 10s\": hours, minutes and seconds, in upper\nor lower case, with or without spaces. Write a function called `parse_duration` that takes what they typed and gives\nback the total number of seconds. Each unit can be used at most once, in the order hours, minutes, seconds. Anything\nelse, such as empty input, an unknown unit or a number without a unit, should cause an error.\n",
+ "started": "2026-11-25 16:22:19",
+ "generator_model": "openai/gpt-oss-20b",
+ "reviewer_model": "gemini-3.5-flash-lite",
+ "inject_wrong_finding": false,
+ "iterations": [
+  {
+   "iteration": 1,
+   "diff": "",
+   "reverted": false,
+   "code": {
+    "solution_code": "\"\"\"solution.py\n\nimport re\n\nclass ParseDurationError(ValueError):\n    \"\"\"Raised when the duration string is invalid.\"\"\"\n\n# Regular expression to match optional hours, minutes, seconds in order.\n# Each part: one or more digits followed by a unit letter (h/m/s), case-insensitive.\n# Spaces are allowed between parts.\n_DURATION_RE = re.compile(r\"^\\s*(?:(?P<hours>\\d+)\\s*[hH]\\s*)?(?:(?P<minutes>\\d+)\\s*[mM]\\s*)?(?:(?P<seconds>\\d+)\\s*[sS]\\s*)?\\s*$\")\n\n# Ensure that at least one unit is present.\n_MIN_PARTS = 1\n\n# Mapping of unit names to multipliers.\n_UNIT_MULTIPLIERS = {\n    'hours': 3600,\n    'minutes': 60,\n    'seconds': 1,\n}\n\n\ndef parse_duration(text: str) -> int:\n    \"\"\"Parse a duration string and return the total number of seconds.\n\n    The string may contain hours (h/H), minutes (m/M), and seconds (s/S) in that order.\n    Each unit may appear at most once and may be omitted. Spaces are optional.\n    Examples:\n        \"1h30m\" -> 5400\n        \"45s\" -> 45\n        \"1h 30m 10s\" -> 5410\n\n    Raises:\n        ParseDurationError: If the input is empty, contains unknown units, or violates the ordering.\n    \"\"\"\n    if text is None:\n        raise ParseDurationError(\"Input cannot be None\")\n    match = _DURATION_RE.fullmatch(text)\n    if not match:\n        raise ParseDurationError(f\"Invalid duration format: {text!r}\")\n    parts = match.groupdict()\n    # Ensure at least one part is present\n    if not any(parts.values()):\n        raise ParseDurationError(\"Empty duration string\")\n    total_seconds = 0\n    for unit_name, multiplier in _UNIT_MULTIPLIERS.items():\n        value = parts.get(unit_name)\n        if value is not None:\n            total_seconds += int(value) * multiplier\n    return total_seconds\n\"\"\"\nsolution_code",
+    "test_code": "\"\"\"test_solution.py\n\nimport pytest\nfrom solution import parse_duration, ParseDurationError\n\n# Normal cases\n@pytest.mark.parametrize(\"input_str,expected\", [\n    (\"1h\", 3600),\n    (\"30m\", 1800),\n    (\"45s\", 45),\n    (\"1h30m\", 5400),\n    (\"1h 30m\", 5400),\n    (\"1h30m10s\", 5410),\n    (\"1h 30m 10s\", 5410),\n    (\"0h0m0s\", 0),\n    (\"2H\", 7200),\n    (\"15M\", 900),\n    (\"20S\", 20),\n])\ndef test_parse_duration_normal(input_str, expected):\n    assert parse_duration(input_str) == expected\n\n# Edge cases: missing units, zero values\n@pytest.mark.parametrize(\"input_str,expected\", [\n    (\"0h\", 0),\n    (\"0m\", 0),\n    (\"0s\", 0),\n    (\"0h 0m\", 0),\n    (\"0h 0m 0s\", 0),\n])\ndef test_parse_duration_zero_values(input_str, expected):\n    assert parse_duration(input_str) == expected\n\n# Error cases\n@pytest.mark.parametrize(\"input_str\", [\n    \"\",            # empty string\n    \"   \",        # only spaces\n    \"1x\",          # unknown unit\n    \"1h 30x\",      # unknown unit after valid\n    \"1h30m10s5\",   # trailing number without unit\n    \"1h30m10s5x\",  # trailing number and unknown unit\n    \"1h30m10s 5\",  # number after unit\n    \"1h30m10s 5s\", # duplicate seconds\n    \"30m1h\",       # wrong order\n    \"1h 1h\",       # duplicate hours\n    \"1m 1h\",       # wrong order\n    \"1h 30m 10s 5\",# trailing number\n])\ndef test_parse_duration_errors(input_str):\n    with pytest.raises(ParseDurationError):\n        parse_duration(input_str)\n\n# None input\ndef test_parse_duration_none():\n    with pytest.raises(ParseDurationError):\n        parse_duration(None)\n\"\"\"\n"
+   },
+   "test_results": {
+    "status": "error",
+    "passed": 0,
+    "failed": 0,
+    "tests": [],
+    "output": "\nno tests ran in 0.07s\n"
+   },
+   "lint_results": {
+    "status": "issues",
+    "blocking_count": 51,
+    "advisory_count": 0,
+    "issues": [
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 6,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 6,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 6,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 6,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 6,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected an identifier",
+      "file": "solution.py",
+      "line": 6,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 25,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 25,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 25,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 25,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected an identifier, but found a keyword `return` that cannot be used here",
+      "file": "solution.py",
+      "line": 25,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 25,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 25,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 25,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 25,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 25,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected an identifier",
+      "file": "solution.py",
+      "line": 25,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Unexpected indentation",
+      "file": "solution.py",
+      "line": 27,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 27,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 27,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 27,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 27,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected `,`, found `and`",
+      "file": "solution.py",
+      "line": 27,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected `,`, found identifier",
+      "file": "solution.py",
+      "line": 27,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected an identifier",
+      "file": "solution.py",
+      "line": 27,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 28,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 28,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 28,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 28,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 28,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 28,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 28,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 28,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 28,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 28,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected an identifier",
+      "file": "solution.py",
+      "line": 28,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected an expression",
+      "file": "solution.py",
+      "line": 29,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Unexpected indentation",
+      "file": "solution.py",
+      "line": 30,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected a statement",
+      "file": "solution.py",
+      "line": 30,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected a statement",
+      "file": "solution.py",
+      "line": 31,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected a statement",
+      "file": "solution.py",
+      "line": 32,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected an expression",
+      "file": "solution.py",
+      "line": 34,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Unexpected indentation",
+      "file": "solution.py",
+      "line": 35,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 35,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Simple statements must be separated by newlines or semicolons",
+      "file": "solution.py",
+      "line": 35,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected `,`, found identifier",
+      "file": "solution.py",
+      "line": 35,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected `,`, found identifier",
+      "file": "solution.py",
+      "line": 35,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected `,`, found `or`",
+      "file": "solution.py",
+      "line": 35,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected `,`, found identifier",
+      "file": "solution.py",
+      "line": 35,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected `,`, found identifier",
+      "file": "solution.py",
+      "line": 35,
+      "blocking": true
+     },
+     {
+      "code": "invalid-syntax",
+      "message": "Expected an identifier",
+      "file": "solution.py",
+      "line": 35,
+      "blocking": true
+     }
+    ]
+   },
+   "review_summary": "The solution.py file contains syntax errors due to an unclosed multi-line string literal at the end of the file, causing all tests and static analysis to fail.",
+   "new_findings": [
+    "F1"
+   ],
+   "standard_sections": [
+    "CS-1",
+    "CS-11",
+    "CS-9",
+    "CS-3"
+   ],
+   "generator_decisions": [
+    {
+     "finding_id": "F1",
+     "decision": "accept",
+     "reason": "The file contains an unclosed triple-quoted string that causes a syntax error; fixing it resolves the issue."
+    }
+   ]
+  },
+  {
+   "iteration": 2,
+   "diff": "--- a/solution.py\n+++ b/solution.py\n@@ -1,17 +1,19 @@\n-\"\"\"solution.py\n-\n import re\n \n class ParseDurationError(ValueError):\n     \"\"\"Raised when the duration string is invalid.\"\"\"\n+    pass\n \n # Regular expression to match optional hours, minutes, seconds in order.\n # Each part: one or more digits followed by a unit letter (h/m/s), case-insensitive.\n # Spaces are allowed between parts.\n-_DURATION_RE = re.compile(r\"^\\s*(?:(?P<hours>\\d+)\\s*[hH]\\s*)?(?:(?P<minutes>\\d+)\\s*[mM]\\s*)?(?:(?P<seconds>\\d+)\\s*[sS]\\s*)?\\s*$\")\n-\n-# Ensure that at least one unit is present.\n-_MIN_PARTS = 1\n+_DURATION_RE = re.compile(r\"\"\"\n+    ^\\s*\n+    (?:(?P<hours>\\d+)\\s*[hH]\\s*)?\n+    (?:(?P<minutes>\\d+)\\s*[mM]\\s*)?\n+    (?:(?P<seconds>\\d+)\\s*[sS]\\s*)?\n+    \\s*$\n+    \"\"\", re.VERBOSE)\n \n # Mapping of unit names to multipliers.\n _UNIT_MULTIPLIERS = {\n@@ -49,5 +51,3 @@\n         if value is not None:\n             total_seconds += int(value) * multiplier\n     return total_seconds\n-\"\"\"\n-solution_code\n--- a/test_solution.py\n+++ b/test_solution.py\n@@ -1,5 +1,3 @@\n-\"\"\"test_solution.py\n-\n import pytest\n from solution import parse_duration, ParseDurationError\n \n@@ -54,4 +52,3 @@\n def test_parse_duration_none():\n     with pytest.raises(ParseDurationError):\n         parse_duration(None)\n-\"\"\"",
+   "reverted": false,
+   "code": {
+    "solution_code": "import re\n\nclass ParseDurationError(ValueError):\n    \"\"\"Raised when the duration string is invalid.\"\"\"\n    pass\n\n# Regular expression to match optional hours, minutes, seconds in order.\n# Each part: one or more digits followed by a unit letter (h/m/s), case-insensitive.\n# Spaces are allowed between parts.\n_DURATION_RE = re.compile(r\"\"\"\n    ^\\s*\n    (?:(?P<hours>\\d+)\\s*[hH]\\s*)?\n    (?:(?P<minutes>\\d+)\\s*[mM]\\s*)?\n    (?:(?P<seconds>\\d+)\\s*[sS]\\s*)?\n    \\s*$\n    \"\"\", re.VERBOSE)\n\n# Mapping of unit names to multipliers.\n_UNIT_MULTIPLIERS = {\n    'hours': 3600,\n    'minutes': 60,\n    'seconds': 1,\n}\n\n\ndef parse_duration(text: str) -> int:\n    \"\"\"Parse a duration string and return the total number of seconds.\n\n    The string may contain hours (h/H), minutes (m/M), and seconds (s/S) in that order.\n    Each unit may appear at most once and may be omitted. Spaces are optional.\n    Examples:\n        \"1h30m\" -> 5400\n        \"45s\" -> 45\n        \"1h 30m 10s\" -> 5410\n\n    Raises:\n        ParseDurationError: If the input is empty, contains unknown units, or violates the ordering.\n    \"\"\"\n    if text is None:\n        raise ParseDurationError(\"Input cannot be None\")\n    match = _DURATION_RE.fullmatch(text)\n    if not match:\n        raise ParseDurationError(f\"Invalid duration format: {text!r}\")\n    parts = match.groupdict()\n    # Ensure at least one part is present\n    if not any(parts.values()):\n        raise ParseDurationError(\"Empty duration string\")\n    total_seconds = 0\n    for unit_name, multiplier in _UNIT_MULTIPLIERS.items():\n        value = parts.get(unit_name)\n        if value is not None:\n            total_seconds += int(value) * multiplier\n    return total_seconds\n",
+    "test_code": "import pytest\nfrom solution import parse_duration, ParseDurationError\n\n# Normal cases\n@pytest.mark.parametrize(\"input_str,expected\", [\n    (\"1h\", 3600),\n    (\"30m\", 1800),\n    (\"45s\", 45),\n    (\"1h30m\", 5400),\n    (\"1h 30m\", 5400),\n    (\"1h30m10s\", 5410),\n    (\"1h 30m 10s\", 5410),\n    (\"0h0m0s\", 0),\n    (\"2H\", 7200),\n    (\"15M\", 900),\n    (\"20S\", 20),\n])\ndef test_parse_duration_normal(input_str, expected):\n    assert parse_duration(input_str) == expected\n\n# Edge cases: missing units, zero values\n@pytest.mark.parametrize(\"input_str,expected\", [\n    (\"0h\", 0),\n    (\"0m\", 0),\n    (\"0s\", 0),\n    (\"0h 0m\", 0),\n    (\"0h 0m 0s\", 0),\n])\ndef test_parse_duration_zero_values(input_str, expected):\n    assert parse_duration(input_str) == expected\n\n# Error cases\n@pytest.mark.parametrize(\"input_str\", [\n    \"\",            # empty string\n    \"   \",        # only spaces\n    \"1x\",          # unknown unit\n    \"1h 30x\",      # unknown unit after valid\n    \"1h30m10s5\",   # trailing number without unit\n    \"1h30m10s5x\",  # trailing number and unknown unit\n    \"1h30m10s 5\",  # number after unit\n    \"1h30m10s 5s\", # duplicate seconds\n    \"30m1h\",       # wrong order\n    \"1h 1h\",       # duplicate hours\n    \"1m 1h\",       # wrong order\n    \"1h 30m 10s 5\",# trailing number\n])\ndef test_parse_duration_errors(input_str):\n    with pytest.raises(ParseDurationError):\n        parse_duration(input_str)\n\n# None input\ndef test_parse_duration_none():\n    with pytest.raises(ParseDurationError):\n        parse_duration(None)\n"
+   },
+   "test_results": {
+    "status": "passed",
+    "passed": 29,
+    "failed": 0,
+    "tests": [
+     {
+      "name": "test_parse_duration_normal[1h-3600]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_normal[30m-1800]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_normal[45s-45]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_normal[1h30m-5400]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_normal[1h 30m-5400]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_normal[1h30m10s-5410]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_normal[1h 30m 10s-5410]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_normal[0h0m0s-0]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_normal[2H-7200]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_normal[15M-900]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_normal[20S-20]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_zero_values[0h-0]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_zero_values[0m-0]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_zero_values[0s-0]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_zero_values[0h 0m-0]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_zero_values[0h 0m 0s-0]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_errors[]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_errors[   ]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_errors[1x]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_errors[1h 30x]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_errors[1h30m10s5]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_errors[1h30m10s5x]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_errors[1h30m10s 5]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_errors[1h30m10s 5s]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_errors[30m1h]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_errors[1h 1h]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_errors[1m 1h]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_errors[1h 30m 10s 5]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_parse_duration_none",
+      "outcome": "passed",
+      "message": ""
+     }
+    ],
+    "output": ".............................                                            [100%]\n29 passed in 0.11s\n"
+   },
+   "lint_results": {
+    "status": "clean",
+    "blocking_count": 0,
+    "advisory_count": 0,
+    "issues": []
+   },
+   "review_summary": "The code and tests are fully correct, passing all tests and static analysis. The implementation cleanly handles regular expression parsing, whitespace, case insensitivity, and invalid inputs as required by the task.",
+   "new_findings": [],
+   "standard_sections": [
+    "CS-1",
+    "CS-11",
+    "CS-9",
+    "CS-6"
+   ]
+  }
+ ],
+ "status": "converged",
+ "error": null,
+ "baseline": {
+  "solution_code": "\"\"\"solution.py\n\nimport re\n\nclass ParseDurationError(ValueError):\n    \"\"\"Raised when the duration string is invalid.\"\"\"\n\n# Regular expression to match optional hours, minutes, seconds in order.\n# Each part: one or more digits followed by a unit letter (h/m/s), case-insensitive.\n# Spaces are allowed between parts.\n_DURATION_RE = re.compile(r\"^\\s*(?:(?P<hours>\\d+)\\s*[hH]\\s*)?(?:(?P<minutes>\\d+)\\s*[mM]\\s*)?(?:(?P<seconds>\\d+)\\s*[sS]\\s*)?\\s*$\")\n\n# Ensure that at least one unit is present.\n_MIN_PARTS = 1\n\n# Mapping of unit names to multipliers.\n_UNIT_MULTIPLIERS = {\n    'hours': 3600,\n    'minutes': 60,\n    'seconds': 1,\n}\n\n\ndef parse_duration(text: str) -> int:\n    \"\"\"Parse a duration string and return the total number of seconds.\n\n    The string may contain hours (h/H), minutes (m/M), and seconds (s/S) in that order.\n    Each unit may appear at most once and may be omitted. Spaces are optional.\n    Examples:\n        \"1h30m\" -> 5400\n        \"45s\" -> 45\n        \"1h 30m 10s\" -> 5410\n\n    Raises:\n        ParseDurationError: If the input is empty, contains unknown units, or violates the ordering.\n    \"\"\"\n    if text is None:\n        raise ParseDurationError(\"Input cannot be None\")\n    match = _DURATION_RE.fullmatch(text)\n    if not match:\n        raise ParseDurationError(f\"Invalid duration format: {text!r}\")\n    parts = match.groupdict()\n    # Ensure at least one part is present\n    if not any(parts.values()):\n        raise ParseDurationError(\"Empty duration string\")\n    total_seconds = 0\n    for unit_name, multiplier in _UNIT_MULTIPLIERS.items():\n        value = parts.get(unit_name)\n        if value is not None:\n            total_seconds += int(value) * multiplier\n    return total_seconds\n\"\"\"\nsolution_code",
+  "test_code": "\"\"\"test_solution.py\n\nimport pytest\nfrom solution import parse_duration, ParseDurationError\n\n# Normal cases\n@pytest.mark.parametrize(\"input_str,expected\", [\n    (\"1h\", 3600),\n    (\"30m\", 1800),\n    (\"45s\", 45),\n    (\"1h30m\", 5400),\n    (\"1h 30m\", 5400),\n    (\"1h30m10s\", 5410),\n    (\"1h 30m 10s\", 5410),\n    (\"0h0m0s\", 0),\n    (\"2H\", 7200),\n    (\"15M\", 900),\n    (\"20S\", 20),\n])\ndef test_parse_duration_normal(input_str, expected):\n    assert parse_duration(input_str) == expected\n\n# Edge cases: missing units, zero values\n@pytest.mark.parametrize(\"input_str,expected\", [\n    (\"0h\", 0),\n    (\"0m\", 0),\n    (\"0s\", 0),\n    (\"0h 0m\", 0),\n    (\"0h 0m 0s\", 0),\n])\ndef test_parse_duration_zero_values(input_str, expected):\n    assert parse_duration(input_str) == expected\n\n# Error cases\n@pytest.mark.parametrize(\"input_str\", [\n    \"\",            # empty string\n    \"   \",        # only spaces\n    \"1x\",          # unknown unit\n    \"1h 30x\",      # unknown unit after valid\n    \"1h30m10s5\",   # trailing number without unit\n    \"1h30m10s5x\",  # trailing number and unknown unit\n    \"1h30m10s 5\",  # number after unit\n    \"1h30m10s 5s\", # duplicate seconds\n    \"30m1h\",       # wrong order\n    \"1h 1h\",       # duplicate hours\n    \"1m 1h\",       # wrong order\n    \"1h 30m 10s 5\",# trailing number\n])\ndef test_parse_duration_errors(input_str):\n    with pytest.raises(ParseDurationError):\n        parse_duration(input_str)\n\n# None input\ndef test_parse_duration_none():\n    with pytest.raises(ParseDurationError):\n        parse_duration(None)\n\"\"\"\n"
+ },
+ "final": {
+  "solution_code": "import re\n\nclass ParseDurationError(ValueError):\n    \"\"\"Raised when the duration string is invalid.\"\"\"\n    pass\n\n# Regular expression to match optional hours, minutes, seconds in order.\n# Each part: one or more digits followed by a unit letter (h/m/s), case-insensitive.\n# Spaces are allowed between parts.\n_DURATION_RE = re.compile(r\"\"\"\n    ^\\s*\n    (?:(?P<hours>\\d+)\\s*[hH]\\s*)?\n    (?:(?P<minutes>\\d+)\\s*[mM]\\s*)?\n    (?:(?P<seconds>\\d+)\\s*[sS]\\s*)?\n    \\s*$\n    \"\"\", re.VERBOSE)\n\n# Mapping of unit names to multipliers.\n_UNIT_MULTIPLIERS = {\n    'hours': 3600,\n    'minutes': 60,\n    'seconds': 1,\n}\n\n\ndef parse_duration(text: str) -> int:\n    \"\"\"Parse a duration string and return the total number of seconds.\n\n    The string may contain hours (h/H), minutes (m/M), and seconds (s/S) in that order.\n    Each unit may appear at most once and may be omitted. Spaces are optional.\n    Examples:\n        \"1h30m\" -> 5400\n        \"45s\" -> 45\n        \"1h 30m 10s\" -> 5410\n\n    Raises:\n        ParseDurationError: If the input is empty, contains unknown units, or violates the ordering.\n    \"\"\"\n    if text is None:\n        raise ParseDurationError(\"Input cannot be None\")\n    match = _DURATION_RE.fullmatch(text)\n    if not match:\n        raise ParseDurationError(f\"Invalid duration format: {text!r}\")\n    parts = match.groupdict()\n    # Ensure at least one part is present\n    if not any(parts.values()):\n        raise ParseDurationError(\"Empty duration string\")\n    total_seconds = 0\n    for unit_name, multiplier in _UNIT_MULTIPLIERS.items():\n        value = parts.get(unit_name)\n        if value is not None:\n            total_seconds += int(value) * multiplier\n    return total_seconds\n",
+  "test_code": "import pytest\nfrom solution import parse_duration, ParseDurationError\n\n# Normal cases\n@pytest.mark.parametrize(\"input_str,expected\", [\n    (\"1h\", 3600),\n    (\"30m\", 1800),\n    (\"45s\", 45),\n    (\"1h30m\", 5400),\n    (\"1h 30m\", 5400),\n    (\"1h30m10s\", 5410),\n    (\"1h 30m 10s\", 5410),\n    (\"0h0m0s\", 0),\n    (\"2H\", 7200),\n    (\"15M\", 900),\n    (\"20S\", 20),\n])\ndef test_parse_duration_normal(input_str, expected):\n    assert parse_duration(input_str) == expected\n\n# Edge cases: missing units, zero values\n@pytest.mark.parametrize(\"input_str,expected\", [\n    (\"0h\", 0),\n    (\"0m\", 0),\n    (\"0s\", 0),\n    (\"0h 0m\", 0),\n    (\"0h 0m 0s\", 0),\n])\ndef test_parse_duration_zero_values(input_str, expected):\n    assert parse_duration(input_str) == expected\n\n# Error cases\n@pytest.mark.parametrize(\"input_str\", [\n    \"\",            # empty string\n    \"   \",        # only spaces\n    \"1x\",          # unknown unit\n    \"1h 30x\",      # unknown unit after valid\n    \"1h30m10s5\",   # trailing number without unit\n    \"1h30m10s5x\",  # trailing number and unknown unit\n    \"1h30m10s 5\",  # number after unit\n    \"1h30m10s 5s\", # duplicate seconds\n    \"30m1h\",       # wrong order\n    \"1h 1h\",       # duplicate hours\n    \"1m 1h\",       # wrong order\n    \"1h 30m 10s 5\",# trailing number\n])\ndef test_parse_duration_errors(input_str):\n    with pytest.raises(ParseDurationError):\n        parse_duration(input_str)\n\n# None input\ndef test_parse_duration_none():\n    with pytest.raises(ParseDurationError):\n        parse_duration(None)\n"
+ },
+ "findings": [
+  {
+   "severity": "critical",
+   "category": "bug",
+   "file": "solution.py",
+   "line": 52,
+   "title": "Unclosed multi-line string literal causes syntax error",
+   "rationale": "Lines 52-53 contain an opening triple quote and `solution_code` without a closing triple quote, causing a SyntaxError that prevents the module from being imported.",
+   "suggested_fix": "Remove the trailing unclosed triple quote and `solution_code` at the end of solution.py.",
+   "evidence": "Static analysis outputs numerous invalid-syntax errors spanning across solution.py.",
+   "standard_ref": "CS-1",
+   "id": "F1",
+   "iteration": 1,
+   "blocking": false,
+   "status": "fixed",
+   "history": [
+    {
+     "iteration": 1,
+     "actor": "reviewer",
+     "status": "open",
+     "reason": ""
+    },
+    {
+     "iteration": 1,
+     "actor": "generator",
+     "status": "accepted",
+     "reason": "The file contains an unclosed triple-quoted string that causes a syntax error; fixing it resolves the issue."
+    },
+    {
+     "iteration": 2,
+     "actor": "orchestrator",
+     "status": "fixed",
+     "reason": "revision kept (no regression)"
+    }
+   ],
+   "injected": false
+  }
+ ],
+ "tool_calls": [
+  {
+   "iteration": 1,
+   "tool": "run_tests",
+   "is_error": false,
+   "seconds": 0.57,
+   "arguments": {
+    "solution_code": "\"\"\"solution.py\n\nimport re\n\nclass ParseDurationError(ValueError):\n    \"\"\"Raised when the duration string is invalid.\"\"...",
+    "test_code": "\"\"\"test_solution.py\n\nimport pytest\nfrom solution import parse_duration, ParseDurationError\n\n# Normal cases\n@pytest.ma..."
+   },
+   "result": "{\n  \"status\": \"error\",\n  \"passed\": 0,\n  \"failed\": 0,\n  \"tests\": [],\n  \"output\": \"\\nno tests ran in 0.07s\\n\"\n}"
+  },
+  {
+   "iteration": 1,
+   "tool": "run_static_analysis",
+   "is_error": false,
+   "seconds": 0.11,
+   "arguments": {
+    "solution_code": "\"\"\"solution.py\n\nimport re\n\nclass ParseDurationError(ValueError):\n    \"\"\"Raised when the duration string is invalid.\"\"...",
+    "test_code": "\"\"\"test_solution.py\n\nimport pytest\nfrom solution import parse_duration, ParseDurationError\n\n# Normal cases\n@pytest.ma..."
+   },
+   "result": "{\n  \"status\": \"issues\",\n  \"blocking_count\": 51,\n  \"advisory_count\": 0,\n  \"issues\": [\n    {\n      \"code\": \"invalid-syn..."
+  },
+  {
+   "iteration": 1,
+   "tool": "review_code",
+   "is_error": false,
+   "seconds": 20.76,
+   "arguments": {
+    "task": "People type durations into our timer app, like \"1h30m\", \"45s\" or \"1h 30m 10s\": hours, minutes and seconds, in upper\no...",
+    "solution_code": "\"\"\"solution.py\n\nimport re\n\nclass ParseDurationError(ValueError):\n    \"\"\"Raised when the duration string is invalid.\"\"...",
+    "test_code": "\"\"\"test_solution.py\n\nimport pytest\nfrom solution import parse_duration, ParseDurationError\n\n# Normal cases\n@pytest.ma...",
+    "test_results": "{\"status\": \"error\", \"passed\": 0, \"failed\": 0, \"tests\": [], \"output\": \"\\nno tests ran in 0.07s\\n\"}",
+    "lint_results": "{\"status\": \"issues\", \"blocking_count\": 51, \"advisory_count\": 0, \"issues\": [{\"code\": \"invalid-syntax\", \"message\": \"Sim...",
+    "ledger": "[]"
+   },
+   "result": "{\n  \"review\": {\n    \"summary\": \"The solution.py file contains syntax errors due to an unclosed multi-line string lite..."
+  },
+  {
+   "iteration": 2,
+   "tool": "run_tests",
+   "is_error": false,
+   "seconds": 0.6,
+   "arguments": {
+    "solution_code": "import re\n\nclass ParseDurationError(ValueError):\n    \"\"\"Raised when the duration string is invalid.\"\"\"\n    pass\n\n# Re...",
+    "test_code": "import pytest\nfrom solution import parse_duration, ParseDurationError\n\n# Normal cases\n@pytest.mark.parametrize(\"input..."
+   },
+   "result": "{\n  \"status\": \"passed\",\n  \"passed\": 29,\n  \"failed\": 0,\n  \"tests\": [\n    {\n      \"name\": \"test_parse_duration_normal[1..."
+  },
+  {
+   "iteration": 2,
+   "tool": "run_static_analysis",
+   "is_error": false,
+   "seconds": 0.11,
+   "arguments": {
+    "solution_code": "import re\n\nclass ParseDurationError(ValueError):\n    \"\"\"Raised when the duration string is invalid.\"\"\"\n    pass\n\n# Re...",
+    "test_code": "import pytest\nfrom solution import parse_duration, ParseDurationError\n\n# Normal cases\n@pytest.mark.parametrize(\"input..."
+   },
+   "result": "{\n  \"status\": \"clean\",\n  \"blocking_count\": 0,\n  \"advisory_count\": 0,\n  \"issues\": []\n}"
+  },
+  {
+   "iteration": 2,
+   "tool": "review_code",
+   "is_error": false,
+   "seconds": 1.46,
+   "arguments": {
+    "task": "People type durations into our timer app, like \"1h30m\", \"45s\" or \"1h 30m 10s\": hours, minutes and seconds, in upper\no...",
+    "solution_code": "import re\n\nclass ParseDurationError(ValueError):\n    \"\"\"Raised when the duration string is invalid.\"\"\"\n    pass\n\n# Re...",
+    "test_code": "import pytest\nfrom solution import parse_duration, ParseDurationError\n\n# Normal cases\n@pytest.mark.parametrize(\"input...",
+    "test_results": "{\"status\": \"passed\", \"passed\": 29, \"failed\": 0, \"tests\": [{\"name\": \"test_parse_duration_normal[1h-3600]\", \"outcome\": ...",
+    "lint_results": "{\"status\": \"clean\", \"blocking_count\": 0, \"advisory_count\": 0, \"issues\": []}",
+    "ledger": "[{\"id\": \"F1\", \"round\": 1, \"severity\": \"critical\", \"file\": \"solution.py\", \"line\": 52, \"title\": \"Unclosed multi-line st..."
+   },
+   "result": "{\n  \"review\": {\n    \"summary\": \"The code and tests are fully correct, passing all tests and static analysis. The impl..."
+  }
+ ],
+ "usage": {
+  "generator": {
+   "prompt_tokens": 4830,
+   "completion_tokens": 2788,
+   "calls": 2,
+   "cached_calls": 0,
+   "model": "openai/gpt-oss-20b"
+  },
+  "reviewer": {
+   "prompt_tokens": 7723,
+   "completion_tokens": 276,
+   "calls": 2,
+   "cached_calls": 0,
+   "model": "gemini-3.5-flash-lite"
+  }
+ },
+ "final_unresolved_blocking": [],
+ "escalated_to_human": [],
+ "evaluation": {
+  "baseline": {
+   "all_passed": false,
+   "passed": 0,
+   "total": 16,
+   "failing": [
+    "test_hidden"
+   ]
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 16,
+   "total": 16,
+   "failing": []
+  },
+  "baseline_lint_blocking": 51,
+  "final_lint_blocking": 0
+ }
+}

@@ -1,0 +1,12 @@
+[
+  {"id": "paginate", "trap": "off-by-one (1-indexed pages)"},
+  {"id": "moving_average", "trap": "off-by-one (last window dropped)"},
+  {"id": "median", "trap": "edge case: even length / input mutation"},
+  {"id": "find_user", "trap": "SQL injection via string formatting"},
+  {"id": "read_config", "trap": "resource leak on error path"},
+  {"id": "safe_join", "trap": "path traversal / prefix check"},
+  {"id": "split_bill", "trap": "float rounding loses cents"},
+  {"id": "parse_duration", "trap": "lenient parsing accepts malformed input"},
+  {"id": "business_days", "trap": "off-by-one (inclusive end date)"},
+  {"id": "render_table", "trap": "HTML injection (no escaping)"}
+]

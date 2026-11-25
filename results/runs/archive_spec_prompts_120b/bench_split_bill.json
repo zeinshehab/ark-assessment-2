@@ -1,0 +1,399 @@
+{
+ "task_id": "split_bill",
+ "task": "Write a function `split_bill(total: str, people: int) -> list[str]` that splits a bill between `people` people.\n`total` is an amount as a decimal string with two decimal places, e.g. `\"100.00\"`. Return one share per person as\nstrings with exactly two decimal places. The shares must add up exactly to the total and differ from each other by at\nmost 0.01; larger shares come first (e.g. `split_bill(\"100.00\", 3) == [\"33.34\", \"33.33\", \"33.33\"]`).\nRaise `ValueError` if `people` is less than 1, or if `total` is negative or not a valid amount.\n",
+ "started": "2026-11-25 15:49:55",
+ "generator_model": "openai/gpt-oss-120b",
+ "reviewer_model": "gemini-3.5-flash-lite",
+ "inject_wrong_finding": false,
+ "iterations": [
+  {
+   "iteration": 1,
+   "diff": "",
+   "reverted": false,
+   "code": {
+    "solution_code": "def split_bill(total: str, people: int) -> list[str]:\n    \"\"\"Split a monetary total among a number of people.\n\n    Args:\n        total: A string representing a non\u2011negative amount with exactly two decimal places.\n        people: Number of people to split the amount among (must be >= 1).\n\n    Returns:\n        A list of strings, each representing a share with exactly two decimal places.\n        Shares are ordered from largest to smallest and the sum of all shares equals ``total``.\n\n    Raises:\n        ValueError: If ``people`` < 1, if ``total`` is negative, or if ``total`` is not a valid monetary string.\n    \"\"\"\n    import re\n\n    if people < 1:\n        raise ValueError(\"people must be at least 1\")\n\n    # Validate total format: non\u2011negative, digits, dot, exactly two digits\n    if not re.fullmatch(r\"\\d+\\.\\d{2}\", total):\n        raise ValueError(\"total must be a non\u2011negative amount with two decimal places\")\n\n    # Convert to integer cents to avoid floating point issues\n    dollars, cents = total.split('.')\n    total_cents = int(dollars) * 100 + int(cents)\n\n    # total_cents is non\u2011negative by construction; extra guard for safety\n    if total_cents < 0:\n        raise ValueError(\"total cannot be negative\")\n\n    base_share = total_cents // people\n    remainder = total_cents % people  # number of shares that get an extra cent\n\n    shares_cents = [base_share + 1] * remainder + [base_share] * (people - remainder)\n    # Larger shares first as required\n    result = [f\"{c // 100}.{c % 100:02d}\" for c in shares_cents]\n    return result\n\n",
+    "test_code": "import pytest\nfrom solution import split_bill\n\n@pytest.mark.parametrize(\n    \"total,people,expected\",\n    [\n        (\"100.00\", 3, [\"33.34\", \"33.33\", \"33.33\"]),\n        (\"0.00\", 5, [\"0.00\", \"0.00\", \"0.00\", \"0.00\", \"0.00\"]),\n        (\"1.00\", 1, [\"1.00\"]),\n        (\"1.00\", 2, [\"0.50\", \"0.50\"]),\n        (\"1.01\", 2, [\"0.51\", \"0.50\"]),\n        (\"10.00\", 4, [\"2.50\", \"2.50\", \"2.50\", \"2.50\"]),\n        (\"10.01\", 4, [\"2.51\", \"2.50\", \"2.50\", \"2.50\"]),\n    ],\n)\ndef test_split_bill_normal(total, people, expected):\n    result = split_bill(total, people)\n    assert result == expected\n    # Verify sum matches total\n    total_cents = int(total.replace('.', ''))\n    result_cents = sum(int(r.replace('.', '')) for r in result)\n    assert result_cents == total_cents\n    # Verify max difference <= 0.01\n    diffs = [float(r) for r in result]\n    assert max(diffs) - min(diffs) <= 0.01\n\ndef test_invalid_people():\n    with pytest.raises(ValueError):\n        split_bill(\"10.00\", 0)\n    with pytest.raises(ValueError):\n        split_bill(\"10.00\", -3)\n\n@pytest.mark.parametrize(\n    \"bad_total\",\n    [\"-1.00\", \"10\", \"10.0\", \"10.000\", \"abc\", \"1.2a\", \"\"]\n)\ndef test_invalid_total(bad_total):\n    with pytest.raises(ValueError):\n        split_bill(bad_total, 2)\n\ndef test_large_number_of_people():\n    total = \"0.99\"\n    people = 100\n    result = split_bill(total, people)\n    # Should have 99 people with 0.01 and 1 person with 0.00\n    assert result.count(\"0.01\") == 99\n    assert result.count(\"0.00\") == 1\n    # Order: larger shares first\n    assert result[0] == \"0.01\"\n    assert result[-1] == \"0.00\"\n\n"
+   },
+   "test_results": {
+    "status": "failed",
+    "passed": 14,
+    "failed": 2,
+    "tests": [
+     {
+      "name": "test_split_bill_normal[100.00-3-expected0]",
+      "outcome": "failed",
+      "message": "assert (33.34 - 33.33) <= 0.01\n +  where 33.34 = max([33.34, 33.33, 33.33])\n +  and   33.33 = min([33.34, 33.33, 33.33])"
+     },
+     {
+      "name": "test_split_bill_normal[0.00-5-expected1]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_split_bill_normal[1.00-1-expected2]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_split_bill_normal[1.00-2-expected3]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_split_bill_normal[1.01-2-expected4]",
+      "outcome": "failed",
+      "message": "assert (0.51 - 0.5) <= 0.01\n +  where 0.51 = max([0.51, 0.5])\n +  and   0.5 = min([0.51, 0.5])"
+     },
+     {
+      "name": "test_split_bill_normal[10.00-4-expected5]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_split_bill_normal[10.01-4-expected6]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_people",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_total[-1.00]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_total[10]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_total[10.0]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_total[10.000]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_total[abc]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_total[1.2a]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_total[]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_large_number_of_people",
+      "outcome": "passed",
+      "message": ""
+     }
+    ],
+    "output": " == expected\n        # Verify sum matches total\n        total_cents = int(total.replace('.', ''))\n        result_cents = sum(int(r.replace('.', '')) for r in result)\n        assert result_cents == total_cents\n        # Verify max difference <= 0.01\n        diffs = [float(r) for r in result]\n>       assert max(diffs) - min(diffs) <= 0.01\nE       assert (33.34 - 33.33) <= 0.01\nE        +  where 33.34 = max([33.34, 33.33, 33.33])\nE        +  and   33.33 = min([33.34, 33.33, 33.33])\n\ntest_solution.py:25: AssertionError\n__________________ test_split_bill_normal[1.01-2-expected4] ___________________\n\ntotal = '1.01', people = 2, expected = ['0.51', '0.50']\n\n    @pytest.mark.parametrize(\n        \"total,people,expected\",\n        [\n            (\"100.00\", 3, [\"33.34\", \"33.33\", \"33.33\"]),\n            (\"0.00\", 5, [\"0.00\", \"0.00\", \"0.00\", \"0.00\", \"0.00\"]),\n            (\"1.00\", 1, [\"1.00\"]),\n            (\"1.00\", 2, [\"0.50\", \"0.50\"]),\n            (\"1.01\", 2, [\"0.51\", \"0.50\"]),\n            (\"10.00\", 4, [\"2.50\", \"2.50\", \"2.50\", \"2.50\"]),\n            (\"10.01\", 4, [\"2.51\", \"2.50\", \"2.50\", \"2.50\"]),\n        ],\n    )\n    def test_split_bill_normal(total, people, expected):\n        result = split_bill(total, people)\n        assert result == expected\n        # Verify sum matches total\n        total_cents = int(total.replace('.', ''))\n        result_cents = sum(int(r.replace('.', '')) for r in result)\n        assert result_cents == total_cents\n        # Verify max difference <= 0.01\n        diffs = [float(r) for r in result]\n>       assert max(diffs) - min(diffs) <= 0.01\nE       assert (0.51 - 0.5) <= 0.01\nE        +  where 0.51 = max([0.51, 0.5])\nE        +  and   0.5 = min([0.51, 0.5])\n\ntest_solution.py:25: AssertionError\n=========================== short test summary info ===========================\nFAILED test_solution.py::test_split_bill_normal[100.00-3-expected0] - assert ...\nFAILED test_solution.py::test_split_bill_normal[1.01-2-expected4] - assert (0...\n2 failed, 14 passed in 0.18s\n"
+   },
+   "lint_results": {
+    "status": "clean",
+    "blocking_count": 0,
+    "advisory_count": 0,
+    "issues": []
+   },
+   "review_summary": "The implementation correctly solves the bill splitting problem, but the test assertion checking the maximum difference uses a strict inequality (<) or has floating-point precision display nuances where 0.51 - 0.5 = 0.009999999999999998 or similar, making standard float subtraction slightly exceed 0.01 due to binary float representation issues. Updating the test assertion to use math.isclose or rounding solves the test failure.",
+   "new_findings": [
+    "F1"
+   ],
+   "standard_sections": [
+    "CS-1",
+    "CS-7",
+    "CS-9",
+    "CS-11"
+   ],
+   "generator_decisions": [
+    {
+     "finding_id": "F1",
+     "decision": "accept",
+     "reason": "The test uses floating point subtraction which can cause tiny precision errors (e.g., 0.51-0.5 = 0.009999...). Switching to Decimal ensures exact decimal arithmetic and reliable comparison to 0.01."
+    }
+   ]
+  },
+  {
+   "iteration": 2,
+   "diff": "--- a/solution.py\n+++ b/solution.py\n@@ -36,4 +36,3 @@\n     # Larger shares first as required\n     result = [f\"{c // 100}.{c % 100:02d}\" for c in shares_cents]\n     return result\n-\n--- a/test_solution.py\n+++ b/test_solution.py\n@@ -1,4 +1,5 @@\n import pytest\n+from decimal import Decimal\n from solution import split_bill\n \n @pytest.mark.parametrize(\n@@ -20,9 +21,9 @@\n     total_cents = int(total.replace('.', ''))\n     result_cents = sum(int(r.replace('.', '')) for r in result)\n     assert result_cents == total_cents\n-    # Verify max difference <= 0.01\n-    diffs = [float(r) for r in result]\n-    assert max(diffs) - min(diffs) <= 0.01\n+    # Verify max difference <= 0.01 using Decimal for exact comparison\n+    diffs = [Decimal(r) for r in result]\n+    assert max(diffs) - min(diffs) <= Decimal('0.01')\n \n def test_invalid_people():\n     with pytest.raises(ValueError):\n@@ -48,4 +49,3 @@\n     # Order: larger shares first\n     assert result[0] == \"0.01\"\n     assert result[-1] == \"0.00\"\n-",
+   "reverted": false,
+   "code": {
+    "solution_code": "def split_bill(total: str, people: int) -> list[str]:\n    \"\"\"Split a monetary total among a number of people.\n\n    Args:\n        total: A string representing a non\u2011negative amount with exactly two decimal places.\n        people: Number of people to split the amount among (must be >= 1).\n\n    Returns:\n        A list of strings, each representing a share with exactly two decimal places.\n        Shares are ordered from largest to smallest and the sum of all shares equals ``total``.\n\n    Raises:\n        ValueError: If ``people`` < 1, if ``total`` is negative, or if ``total`` is not a valid monetary string.\n    \"\"\"\n    import re\n\n    if people < 1:\n        raise ValueError(\"people must be at least 1\")\n\n    # Validate total format: non\u2011negative, digits, dot, exactly two digits\n    if not re.fullmatch(r\"\\d+\\.\\d{2}\", total):\n        raise ValueError(\"total must be a non\u2011negative amount with two decimal places\")\n\n    # Convert to integer cents to avoid floating point issues\n    dollars, cents = total.split('.')\n    total_cents = int(dollars) * 100 + int(cents)\n\n    # total_cents is non\u2011negative by construction; extra guard for safety\n    if total_cents < 0:\n        raise ValueError(\"total cannot be negative\")\n\n    base_share = total_cents // people\n    remainder = total_cents % people  # number of shares that get an extra cent\n\n    shares_cents = [base_share + 1] * remainder + [base_share] * (people - remainder)\n    # Larger shares first as required\n    result = [f\"{c // 100}.{c % 100:02d}\" for c in shares_cents]\n    return result\n",
+    "test_code": "import pytest\nfrom decimal import Decimal\nfrom solution import split_bill\n\n@pytest.mark.parametrize(\n    \"total,people,expected\",\n    [\n        (\"100.00\", 3, [\"33.34\", \"33.33\", \"33.33\"]),\n        (\"0.00\", 5, [\"0.00\", \"0.00\", \"0.00\", \"0.00\", \"0.00\"]),\n        (\"1.00\", 1, [\"1.00\"]),\n        (\"1.00\", 2, [\"0.50\", \"0.50\"]),\n        (\"1.01\", 2, [\"0.51\", \"0.50\"]),\n        (\"10.00\", 4, [\"2.50\", \"2.50\", \"2.50\", \"2.50\"]),\n        (\"10.01\", 4, [\"2.51\", \"2.50\", \"2.50\", \"2.50\"]),\n    ],\n)\ndef test_split_bill_normal(total, people, expected):\n    result = split_bill(total, people)\n    assert result == expected\n    # Verify sum matches total\n    total_cents = int(total.replace('.', ''))\n    result_cents = sum(int(r.replace('.', '')) for r in result)\n    assert result_cents == total_cents\n    # Verify max difference <= 0.01 using Decimal for exact comparison\n    diffs = [Decimal(r) for r in result]\n    assert max(diffs) - min(diffs) <= Decimal('0.01')\n\ndef test_invalid_people():\n    with pytest.raises(ValueError):\n        split_bill(\"10.00\", 0)\n    with pytest.raises(ValueError):\n        split_bill(\"10.00\", -3)\n\n@pytest.mark.parametrize(\n    \"bad_total\",\n    [\"-1.00\", \"10\", \"10.0\", \"10.000\", \"abc\", \"1.2a\", \"\"]\n)\ndef test_invalid_total(bad_total):\n    with pytest.raises(ValueError):\n        split_bill(bad_total, 2)\n\ndef test_large_number_of_people():\n    total = \"0.99\"\n    people = 100\n    result = split_bill(total, people)\n    # Should have 99 people with 0.01 and 1 person with 0.00\n    assert result.count(\"0.01\") == 99\n    assert result.count(\"0.00\") == 1\n    # Order: larger shares first\n    assert result[0] == \"0.01\"\n    assert result[-1] == \"0.00\"\n"
+   },
+   "test_results": {
+    "status": "passed",
+    "passed": 16,
+    "failed": 0,
+    "tests": [
+     {
+      "name": "test_split_bill_normal[100.00-3-expected0]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_split_bill_normal[0.00-5-expected1]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_split_bill_normal[1.00-1-expected2]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_split_bill_normal[1.00-2-expected3]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_split_bill_normal[1.01-2-expected4]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_split_bill_normal[10.00-4-expected5]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_split_bill_normal[10.01-4-expected6]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_people",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_total[-1.00]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_total[10]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_total[10.0]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_total[10.000]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_total[abc]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_total[1.2a]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_total[]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_large_number_of_people",
+      "outcome": "passed",
+      "message": ""
+     }
+    ],
+    "output": "................                                                         [100%]\n16 passed in 0.10s\n"
+   },
+   "lint_results": {
+    "status": "clean",
+    "blocking_count": 0,
+    "advisory_count": 0,
+    "issues": []
+   },
+   "review_summary": "The code and tests are fully correct, passing all checks and adhering to standard requirements.",
+   "new_findings": [],
+   "standard_sections": [
+    "CS-1",
+    "CS-11",
+    "CS-7",
+    "CS-9"
+   ]
+  }
+ ],
+ "status": "converged",
+ "error": null,
+ "baseline": {
+  "solution_code": "def split_bill(total: str, people: int) -> list[str]:\n    \"\"\"Split a monetary total among a number of people.\n\n    Args:\n        total: A string representing a non\u2011negative amount with exactly two decimal places.\n        people: Number of people to split the amount among (must be >= 1).\n\n    Returns:\n        A list of strings, each representing a share with exactly two decimal places.\n        Shares are ordered from largest to smallest and the sum of all shares equals ``total``.\n\n    Raises:\n        ValueError: If ``people`` < 1, if ``total`` is negative, or if ``total`` is not a valid monetary string.\n    \"\"\"\n    import re\n\n    if people < 1:\n        raise ValueError(\"people must be at least 1\")\n\n    # Validate total format: non\u2011negative, digits, dot, exactly two digits\n    if not re.fullmatch(r\"\\d+\\.\\d{2}\", total):\n        raise ValueError(\"total must be a non\u2011negative amount with two decimal places\")\n\n    # Convert to integer cents to avoid floating point issues\n    dollars, cents = total.split('.')\n    total_cents = int(dollars) * 100 + int(cents)\n\n    # total_cents is non\u2011negative by construction; extra guard for safety\n    if total_cents < 0:\n        raise ValueError(\"total cannot be negative\")\n\n    base_share = total_cents // people\n    remainder = total_cents % people  # number of shares that get an extra cent\n\n    shares_cents = [base_share + 1] * remainder + [base_share] * (people - remainder)\n    # Larger shares first as required\n    result = [f\"{c // 100}.{c % 100:02d}\" for c in shares_cents]\n    return result\n\n",
+  "test_code": "import pytest\nfrom solution import split_bill\n\n@pytest.mark.parametrize(\n    \"total,people,expected\",\n    [\n        (\"100.00\", 3, [\"33.34\", \"33.33\", \"33.33\"]),\n        (\"0.00\", 5, [\"0.00\", \"0.00\", \"0.00\", \"0.00\", \"0.00\"]),\n        (\"1.00\", 1, [\"1.00\"]),\n        (\"1.00\", 2, [\"0.50\", \"0.50\"]),\n        (\"1.01\", 2, [\"0.51\", \"0.50\"]),\n        (\"10.00\", 4, [\"2.50\", \"2.50\", \"2.50\", \"2.50\"]),\n        (\"10.01\", 4, [\"2.51\", \"2.50\", \"2.50\", \"2.50\"]),\n    ],\n)\ndef test_split_bill_normal(total, people, expected):\n    result = split_bill(total, people)\n    assert result == expected\n    # Verify sum matches total\n    total_cents = int(total.replace('.', ''))\n    result_cents = sum(int(r.replace('.', '')) for r in result)\n    assert result_cents == total_cents\n    # Verify max difference <= 0.01\n    diffs = [float(r) for r in result]\n    assert max(diffs) - min(diffs) <= 0.01\n\ndef test_invalid_people():\n    with pytest.raises(ValueError):\n        split_bill(\"10.00\", 0)\n    with pytest.raises(ValueError):\n        split_bill(\"10.00\", -3)\n\n@pytest.mark.parametrize(\n    \"bad_total\",\n    [\"-1.00\", \"10\", \"10.0\", \"10.000\", \"abc\", \"1.2a\", \"\"]\n)\ndef test_invalid_total(bad_total):\n    with pytest.raises(ValueError):\n        split_bill(bad_total, 2)\n\ndef test_large_number_of_people():\n    total = \"0.99\"\n    people = 100\n    result = split_bill(total, people)\n    # Should have 99 people with 0.01 and 1 person with 0.00\n    assert result.count(\"0.01\") == 99\n    assert result.count(\"0.00\") == 1\n    # Order: larger shares first\n    assert result[0] == \"0.01\"\n    assert result[-1] == \"0.00\"\n\n"
+ },
+ "final": {
+  "solution_code": "def split_bill(total: str, people: int) -> list[str]:\n    \"\"\"Split a monetary total among a number of people.\n\n    Args:\n        total: A string representing a non\u2011negative amount with exactly two decimal places.\n        people: Number of people to split the amount among (must be >= 1).\n\n    Returns:\n        A list of strings, each representing a share with exactly two decimal places.\n        Shares are ordered from largest to smallest and the sum of all shares equals ``total``.\n\n    Raises:\n        ValueError: If ``people`` < 1, if ``total`` is negative, or if ``total`` is not a valid monetary string.\n    \"\"\"\n    import re\n\n    if people < 1:\n        raise ValueError(\"people must be at least 1\")\n\n    # Validate total format: non\u2011negative, digits, dot, exactly two digits\n    if not re.fullmatch(r\"\\d+\\.\\d{2}\", total):\n        raise ValueError(\"total must be a non\u2011negative amount with two decimal places\")\n\n    # Convert to integer cents to avoid floating point issues\n    dollars, cents = total.split('.')\n    total_cents = int(dollars) * 100 + int(cents)\n\n    # total_cents is non\u2011negative by construction; extra guard for safety\n    if total_cents < 0:\n        raise ValueError(\"total cannot be negative\")\n\n    base_share = total_cents // people\n    remainder = total_cents % people  # number of shares that get an extra cent\n\n    shares_cents = [base_share + 1] * remainder + [base_share] * (people - remainder)\n    # Larger shares first as required\n    result = [f\"{c // 100}.{c % 100:02d}\" for c in shares_cents]\n    return result\n",
+  "test_code": "import pytest\nfrom decimal import Decimal\nfrom solution import split_bill\n\n@pytest.mark.parametrize(\n    \"total,people,expected\",\n    [\n        (\"100.00\", 3, [\"33.34\", \"33.33\", \"33.33\"]),\n        (\"0.00\", 5, [\"0.00\", \"0.00\", \"0.00\", \"0.00\", \"0.00\"]),\n        (\"1.00\", 1, [\"1.00\"]),\n        (\"1.00\", 2, [\"0.50\", \"0.50\"]),\n        (\"1.01\", 2, [\"0.51\", \"0.50\"]),\n        (\"10.00\", 4, [\"2.50\", \"2.50\", \"2.50\", \"2.50\"]),\n        (\"10.01\", 4, [\"2.51\", \"2.50\", \"2.50\", \"2.50\"]),\n    ],\n)\ndef test_split_bill_normal(total, people, expected):\n    result = split_bill(total, people)\n    assert result == expected\n    # Verify sum matches total\n    total_cents = int(total.replace('.', ''))\n    result_cents = sum(int(r.replace('.', '')) for r in result)\n    assert result_cents == total_cents\n    # Verify max difference <= 0.01 using Decimal for exact comparison\n    diffs = [Decimal(r) for r in result]\n    assert max(diffs) - min(diffs) <= Decimal('0.01')\n\ndef test_invalid_people():\n    with pytest.raises(ValueError):\n        split_bill(\"10.00\", 0)\n    with pytest.raises(ValueError):\n        split_bill(\"10.00\", -3)\n\n@pytest.mark.parametrize(\n    \"bad_total\",\n    [\"-1.00\", \"10\", \"10.0\", \"10.000\", \"abc\", \"1.2a\", \"\"]\n)\ndef test_invalid_total(bad_total):\n    with pytest.raises(ValueError):\n        split_bill(bad_total, 2)\n\ndef test_large_number_of_people():\n    total = \"0.99\"\n    people = 100\n    result = split_bill(total, people)\n    # Should have 99 people with 0.01 and 1 person with 0.00\n    assert result.count(\"0.01\") == 99\n    assert result.count(\"0.00\") == 1\n    # Order: larger shares first\n    assert result[0] == \"0.01\"\n    assert result[-1] == \"0.00\"\n"
+ },
+ "findings": [
+  {
+   "severity": "minor",
+   "category": "test_gap",
+   "file": "test_solution.py",
+   "line": 25,
+   "title": "Float precision issue in test difference assertion",
+   "rationale": "Floating-point representation of decimals like 0.51 and 0.5 can result in subtraction yielding 0.009999999999999998 which violates strict <= 0.01 comparison due to precision inaccuracies.",
+   "suggested_fix": "Compare using round(max(diffs) - min(diffs), 2) <= 0.01 or use math.isclose.",
+   "evidence": "E       assert (0.51 - 0.5) <= 0.01\nE        +  where 0.51 = max([0.51, 0.5])\nE        +  and   0.5 = min([0.51, 0.5])\ntest_solution.py:25: AssertionError",
+   "standard_ref": "CS-7",
+   "id": "F1",
+   "iteration": 1,
+   "blocking": false,
+   "status": "fixed",
+   "history": [
+    {
+     "iteration": 1,
+     "actor": "reviewer",
+     "status": "open",
+     "reason": ""
+    },
+    {
+     "iteration": 1,
+     "actor": "generator",
+     "status": "accepted",
+     "reason": "The test uses floating point subtraction which can cause tiny precision errors (e.g., 0.51-0.5 = 0.009999...). Switching to Decimal ensures exact decimal arithmetic and reliable comparison to 0.01."
+    },
+    {
+     "iteration": 2,
+     "actor": "orchestrator",
+     "status": "fixed",
+     "reason": "revision kept (no regression)"
+    }
+   ],
+   "injected": false
+  }
+ ],
+ "tool_calls": [
+  {
+   "iteration": 1,
+   "tool": "run_tests",
+   "is_error": false,
+   "seconds": 0.69,
+   "arguments": {
+    "solution_code": "def split_bill(total: str, people: int) -> list[str]:\n    \"\"\"Split a monetary total among a number of people.\n\n    Ar...",
+    "test_code": "import pytest\nfrom solution import split_bill\n\n@pytest.mark.parametrize(\n    \"total,people,expected\",\n    [\n        (..."
+   },
+   "result": "{\n  \"status\": \"failed\",\n  \"passed\": 14,\n  \"failed\": 2,\n  \"tests\": [\n    {\n      \"name\": \"test_split_bill_normal[100.0..."
+  },
+  {
+   "iteration": 1,
+   "tool": "run_static_analysis",
+   "is_error": false,
+   "seconds": 0.1,
+   "arguments": {
+    "solution_code": "def split_bill(total: str, people: int) -> list[str]:\n    \"\"\"Split a monetary total among a number of people.\n\n    Ar...",
+    "test_code": "import pytest\nfrom solution import split_bill\n\n@pytest.mark.parametrize(\n    \"total,people,expected\",\n    [\n        (..."
+   },
+   "result": "{\n  \"status\": \"clean\",\n  \"blocking_count\": 0,\n  \"advisory_count\": 0,\n  \"issues\": []\n}"
+  },
+  {
+   "iteration": 1,
+   "tool": "review_code",
+   "is_error": false,
+   "seconds": 2.89,
+   "arguments": {
+    "task": "Write a function `split_bill(total: str, people: int) -> list[str]` that splits a bill between `people` people.\n`tota...",
+    "solution_code": "def split_bill(total: str, people: int) -> list[str]:\n    \"\"\"Split a monetary total among a number of people.\n\n    Ar...",
+    "test_code": "import pytest\nfrom solution import split_bill\n\n@pytest.mark.parametrize(\n    \"total,people,expected\",\n    [\n        (...",
+    "test_results": "{\"status\": \"failed\", \"passed\": 14, \"failed\": 2, \"tests\": [{\"name\": \"test_split_bill_normal[100.00-3-expected0]\", \"out...",
+    "lint_results": "{\"status\": \"clean\", \"blocking_count\": 0, \"advisory_count\": 0, \"issues\": []}",
+    "ledger": "[]"
+   },
+   "result": "{\n  \"review\": {\n    \"summary\": \"The implementation correctly solves the bill splitting problem, but the test assertio..."
+  },
+  {
+   "iteration": 2,
+   "tool": "run_tests",
+   "is_error": false,
+   "seconds": 0.61,
+   "arguments": {
+    "solution_code": "def split_bill(total: str, people: int) -> list[str]:\n    \"\"\"Split a monetary total among a number of people.\n\n    Ar...",
+    "test_code": "import pytest\nfrom decimal import Decimal\nfrom solution import split_bill\n\n@pytest.mark.parametrize(\n    \"total,peopl..."
+   },
+   "result": "{\n  \"status\": \"passed\",\n  \"passed\": 16,\n  \"failed\": 0,\n  \"tests\": [\n    {\n      \"name\": \"test_split_bill_normal[100.0..."
+  },
+  {
+   "iteration": 2,
+   "tool": "run_static_analysis",
+   "is_error": false,
+   "seconds": 0.1,
+   "arguments": {
+    "solution_code": "def split_bill(total: str, people: int) -> list[str]:\n    \"\"\"Split a monetary total among a number of people.\n\n    Ar...",
+    "test_code": "import pytest\nfrom decimal import Decimal\nfrom solution import split_bill\n\n@pytest.mark.parametrize(\n    \"total,peopl..."
+   },
+   "result": "{\n  \"status\": \"clean\",\n  \"blocking_count\": 0,\n  \"advisory_count\": 0,\n  \"issues\": []\n}"
+  },
+  {
+   "iteration": 2,
+   "tool": "review_code",
+   "is_error": false,
+   "seconds": 18.76,
+   "arguments": {
+    "task": "Write a function `split_bill(total: str, people: int) -> list[str]` that splits a bill between `people` people.\n`tota...",
+    "solution_code": "def split_bill(total: str, people: int) -> list[str]:\n    \"\"\"Split a monetary total among a number of people.\n\n    Ar...",
+    "test_code": "import pytest\nfrom decimal import Decimal\nfrom solution import split_bill\n\n@pytest.mark.parametrize(\n    \"total,peopl...",
+    "test_results": "{\"status\": \"passed\", \"passed\": 16, \"failed\": 0, \"tests\": [{\"name\": \"test_split_bill_normal[100.00-3-expected0]\", \"out...",
+    "lint_results": "{\"status\": \"clean\", \"blocking_count\": 0, \"advisory_count\": 0, \"issues\": []}",
+    "ledger": "[{\"id\": \"F1\", \"round\": 1, \"severity\": \"minor\", \"file\": \"test_solution.py\", \"line\": 25, \"title\": \"Float precision issu..."
+   },
+   "result": "{\n  \"review\": {\n    \"summary\": \"The code and tests are fully correct, passing all checks and adhering to standard req..."
+  }
+ ],
+ "usage": {
+  "generator": {
+   "prompt_tokens": 2706,
+   "completion_tokens": 2433,
+   "calls": 2,
+   "cached_calls": 0,
+   "model": "openai/gpt-oss-120b"
+  },
+  "reviewer": {
+   "prompt_tokens": 5160,
+   "completion_tokens": 423,
+   "calls": 2,
+   "cached_calls": 0,
+   "model": "gemini-3.5-flash-lite"
+  }
+ },
+ "final_unresolved_blocking": [],
+ "escalated_to_human": [],
+ "evaluation": {
+  "baseline": {
+   "all_passed": true,
+   "passed": 8,
+   "total": 8,
+   "failing": []
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 8,
+   "total": 8,
+   "failing": []
+  },
+  "baseline_lint_blocking": 0,
+  "final_lint_blocking": 0
+ }
+}

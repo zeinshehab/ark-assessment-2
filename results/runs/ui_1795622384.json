@@ -1,0 +1,219 @@
+{
+ "task_id": "custom",
+ "task": "Write a program that calculates the square root of a given integer",
+ "started": "2026-11-25 17:59:43",
+ "generator_model": "openai/gpt-oss-20b",
+ "reviewer_model": "gemini-3.5-flash-lite",
+ "inject_wrong_finding": false,
+ "iterations": [
+  {
+   "iteration": 1,
+   "diff": "",
+   "reverted": false,
+   "code": {
+    "solution_code": "def sqrt_int(n: int) -> int:\n    \"\"\"Return the integer square root of a non\u2011negative integer.\n\n    The integer square root of ``n`` is the greatest integer ``x`` such that\n    ``x*x <= n``.  ``sqrt_int`` raises ``ValueError`` if ``n`` is negative.\n\n    Parameters\n    ----------\n    n: int\n        The number to take the square root of.\n\n    Returns\n    -------\n    int\n        The integer square root of ``n``.\n\n    Examples\n    --------\n    >>> sqrt_int(0)\n    0\n    >>> sqrt_int(1)\n    1\n    >>> sqrt_int(15)\n    3\n    >>> sqrt_int(16)\n    4\n    \"\"\"\n    if n < 0:\n        raise ValueError(\"sqrt_int is only defined for non\u2011negative integers\")\n    # Use math.isqrt for efficient integer square root\n    import math\n    return math.isqrt(n)\n",
+    "test_code": "import pytest\nfrom solution import sqrt_int\n\n# Normal cases\n@pytest.mark.parametrize(\n    \"n,expected\",\n    [\n        (0, 0),\n        (1, 1),\n        (2, 1),\n        (3, 1),\n        (4, 2),\n        (15, 3),\n        (16, 4),\n        (17, 4),\n        (24, 4),\n        (25, 5),\n        (26, 5),\n        (1000000, 1000),\n    ],\n)\ndef test_sqrt_int_normal(n, expected):\n    assert sqrt_int(n) == expected\n\n# Edge cases\n@pytest.mark.parametrize(\"n\", [0, 1, 2, 3, 4])\ndef test_sqrt_int_edge_cases(n):\n    assert sqrt_int(n) == int(n**0.5)\n\n# Negative input should raise ValueError\n@pytest.mark.parametrize(\"n\", [-1, -10, -100])\ndef test_sqrt_int_negative(n):\n    with pytest.raises(ValueError):\n        sqrt_int(n)\n\n# Large number test\ndef test_sqrt_int_large():\n    n = 10**12 + 123456\n    expected = int((10**12 + 123456)**0.5)\n    assert sqrt_int(n) == expected\n\n# Ensure function type\ndef test_sqrt_int_type():\n    assert isinstance(sqrt_int(10), int)\n"
+   },
+   "test_results": {
+    "status": "passed",
+    "passed": 22,
+    "failed": 0,
+    "tests": [
+     {
+      "name": "test_sqrt_int_normal[0-0]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_normal[1-1]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_normal[2-1]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_normal[3-1]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_normal[4-2]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_normal[15-3]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_normal[16-4]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_normal[17-4]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_normal[24-4]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_normal[25-5]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_normal[26-5]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_normal[1000000-1000]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_edge_cases[0]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_edge_cases[1]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_edge_cases[2]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_edge_cases[3]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_edge_cases[4]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_negative[-1]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_negative[-10]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_negative[-100]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_large",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_sqrt_int_type",
+      "outcome": "passed",
+      "message": ""
+     }
+    ],
+    "output": "......................                                                   [100%]\n22 passed\n"
+   },
+   "lint_results": {
+    "status": "clean",
+    "blocking_count": 0,
+    "advisory_count": 0,
+    "issues": []
+   },
+   "review_summary": "The code and tests are fully correct, robust, and adhere to all coding standards. All tests passed successfully.",
+   "new_findings": [],
+   "standard_sections": [
+    "CS-9",
+    "CS-1",
+    "CS-3",
+    "CS-6"
+   ]
+  }
+ ],
+ "status": "converged",
+ "error": null,
+ "baseline": {
+  "solution_code": "def sqrt_int(n: int) -> int:\n    \"\"\"Return the integer square root of a non\u2011negative integer.\n\n    The integer square root of ``n`` is the greatest integer ``x`` such that\n    ``x*x <= n``.  ``sqrt_int`` raises ``ValueError`` if ``n`` is negative.\n\n    Parameters\n    ----------\n    n: int\n        The number to take the square root of.\n\n    Returns\n    -------\n    int\n        The integer square root of ``n``.\n\n    Examples\n    --------\n    >>> sqrt_int(0)\n    0\n    >>> sqrt_int(1)\n    1\n    >>> sqrt_int(15)\n    3\n    >>> sqrt_int(16)\n    4\n    \"\"\"\n    if n < 0:\n        raise ValueError(\"sqrt_int is only defined for non\u2011negative integers\")\n    # Use math.isqrt for efficient integer square root\n    import math\n    return math.isqrt(n)\n",
+  "test_code": "import pytest\nfrom solution import sqrt_int\n\n# Normal cases\n@pytest.mark.parametrize(\n    \"n,expected\",\n    [\n        (0, 0),\n        (1, 1),\n        (2, 1),\n        (3, 1),\n        (4, 2),\n        (15, 3),\n        (16, 4),\n        (17, 4),\n        (24, 4),\n        (25, 5),\n        (26, 5),\n        (1000000, 1000),\n    ],\n)\ndef test_sqrt_int_normal(n, expected):\n    assert sqrt_int(n) == expected\n\n# Edge cases\n@pytest.mark.parametrize(\"n\", [0, 1, 2, 3, 4])\ndef test_sqrt_int_edge_cases(n):\n    assert sqrt_int(n) == int(n**0.5)\n\n# Negative input should raise ValueError\n@pytest.mark.parametrize(\"n\", [-1, -10, -100])\ndef test_sqrt_int_negative(n):\n    with pytest.raises(ValueError):\n        sqrt_int(n)\n\n# Large number test\ndef test_sqrt_int_large():\n    n = 10**12 + 123456\n    expected = int((10**12 + 123456)**0.5)\n    assert sqrt_int(n) == expected\n\n# Ensure function type\ndef test_sqrt_int_type():\n    assert isinstance(sqrt_int(10), int)\n"
+ },
+ "final": {
+  "solution_code": "def sqrt_int(n: int) -> int:\n    \"\"\"Return the integer square root of a non\u2011negative integer.\n\n    The integer square root of ``n`` is the greatest integer ``x`` such that\n    ``x*x <= n``.  ``sqrt_int`` raises ``ValueError`` if ``n`` is negative.\n\n    Parameters\n    ----------\n    n: int\n        The number to take the square root of.\n\n    Returns\n    -------\n    int\n        The integer square root of ``n``.\n\n    Examples\n    --------\n    >>> sqrt_int(0)\n    0\n    >>> sqrt_int(1)\n    1\n    >>> sqrt_int(15)\n    3\n    >>> sqrt_int(16)\n    4\n    \"\"\"\n    if n < 0:\n        raise ValueError(\"sqrt_int is only defined for non\u2011negative integers\")\n    # Use math.isqrt for efficient integer square root\n    import math\n    return math.isqrt(n)\n",
+  "test_code": "import pytest\nfrom solution import sqrt_int\n\n# Normal cases\n@pytest.mark.parametrize(\n    \"n,expected\",\n    [\n        (0, 0),\n        (1, 1),\n        (2, 1),\n        (3, 1),\n        (4, 2),\n        (15, 3),\n        (16, 4),\n        (17, 4),\n        (24, 4),\n        (25, 5),\n        (26, 5),\n        (1000000, 1000),\n    ],\n)\ndef test_sqrt_int_normal(n, expected):\n    assert sqrt_int(n) == expected\n\n# Edge cases\n@pytest.mark.parametrize(\"n\", [0, 1, 2, 3, 4])\ndef test_sqrt_int_edge_cases(n):\n    assert sqrt_int(n) == int(n**0.5)\n\n# Negative input should raise ValueError\n@pytest.mark.parametrize(\"n\", [-1, -10, -100])\ndef test_sqrt_int_negative(n):\n    with pytest.raises(ValueError):\n        sqrt_int(n)\n\n# Large number test\ndef test_sqrt_int_large():\n    n = 10**12 + 123456\n    expected = int((10**12 + 123456)**0.5)\n    assert sqrt_int(n) == expected\n\n# Ensure function type\ndef test_sqrt_int_type():\n    assert isinstance(sqrt_int(10), int)\n"
+ },
+ "findings": [],
+ "tool_calls": [
+  {
+   "iteration": 1,
+   "tool": "run_tests",
+   "is_error": false,
+   "seconds": 0.61,
+   "arguments": {
+    "solution_code": "def sqrt_int(n: int) -> int:\n    \"\"\"Return the integer square root of a non\u2011negative integer.\n\n    The integer square...",
+    "test_code": "import pytest\nfrom solution import sqrt_int\n\n# Normal cases\n@pytest.mark.parametrize(\n    \"n,expected\",\n    [\n       ..."
+   },
+   "result": "{\n  \"status\": \"passed\",\n  \"passed\": 22,\n  \"failed\": 0,\n  \"tests\": [\n    {\n      \"name\": \"test_sqrt_int_normal[0-0]\",\n..."
+  },
+  {
+   "iteration": 1,
+   "tool": "run_static_analysis",
+   "is_error": false,
+   "seconds": 0.11,
+   "arguments": {
+    "solution_code": "def sqrt_int(n: int) -> int:\n    \"\"\"Return the integer square root of a non\u2011negative integer.\n\n    The integer square...",
+    "test_code": "import pytest\nfrom solution import sqrt_int\n\n# Normal cases\n@pytest.mark.parametrize(\n    \"n,expected\",\n    [\n       ..."
+   },
+   "result": "{\n  \"status\": \"clean\",\n  \"blocking_count\": 0,\n  \"advisory_count\": 0,\n  \"issues\": []\n}"
+  },
+  {
+   "iteration": 1,
+   "tool": "review_code",
+   "is_error": false,
+   "seconds": 0.27,
+   "arguments": {
+    "task": "Write a program that calculates the square root of a given integer",
+    "solution_code": "def sqrt_int(n: int) -> int:\n    \"\"\"Return the integer square root of a non\u2011negative integer.\n\n    The integer square...",
+    "test_code": "import pytest\nfrom solution import sqrt_int\n\n# Normal cases\n@pytest.mark.parametrize(\n    \"n,expected\",\n    [\n       ...",
+    "test_results": "{\"status\": \"passed\", \"passed\": 22, \"failed\": 0, \"tests\": [{\"name\": \"test_sqrt_int_normal[0-0]\", \"outcome\": \"passed\", ...",
+    "lint_results": "{\"status\": \"clean\", \"blocking_count\": 0, \"advisory_count\": 0, \"issues\": []}",
+    "ledger": "[]"
+   },
+   "result": "{\n  \"review\": {\n    \"summary\": \"The code and tests are fully correct, robust, and adhere to all coding standards. All..."
+  }
+ ],
+ "usage": {
+  "generator": {
+   "prompt_tokens": 296,
+   "completion_tokens": 662,
+   "calls": 1,
+   "cached_calls": 1,
+   "model": "openai/gpt-oss-20b"
+  },
+  "reviewer": {
+   "prompt_tokens": 1679,
+   "completion_tokens": 37,
+   "calls": 1,
+   "cached_calls": 1,
+   "model": "gemini-3.5-flash-lite"
+  }
+ },
+ "final_unresolved_blocking": [],
+ "escalated_to_human": []
+}

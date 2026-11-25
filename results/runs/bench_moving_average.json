@@ -1,0 +1,165 @@
+{
+ "task_id": "moving_average",
+ "task": "I track a daily number and want to smooth it with a moving average. Write a function called `moving_average` that\ntakes the list of numbers and a window size, and gives back the average of every run of that many consecutive\nnumbers, in order. If there are fewer numbers than the window size, give back an empty list. A window size below 1\ndoesn't make sense and should cause an error.\n",
+ "started": "2026-11-25 16:18:24",
+ "generator_model": "openai/gpt-oss-20b",
+ "reviewer_model": "gemini-3.5-flash-lite",
+ "inject_wrong_finding": false,
+ "iterations": [
+  {
+   "iteration": 1,
+   "diff": "",
+   "reverted": false,
+   "code": {
+    "solution_code": "def moving_average(nums, window):\n    \"\"\"Return the moving average of *nums* with the given *window* size.\n\n    Parameters\n    ----------\n    nums : list[float]\n        Sequence of numbers to smooth.\n    window : int\n        Size of the sliding window. Must be >= 1.\n\n    Returns\n    -------\n    list[float]\n        A list of the averages of each consecutive run of *window* numbers.\n\n    Raises\n    ------\n    ValueError\n        If *window* is less than 1.\n    \"\"\"\n    if window < 1:\n        raise ValueError(\"window size must be at least 1\")\n    if len(nums) < window:\n        return []\n    result = []\n    # Compute the first window sum\n    window_sum = sum(nums[:window])\n    result.append(window_sum / window)\n    for i in range(window, len(nums)):\n        window_sum += nums[i] - nums[i - window]\n        result.append(window_sum / window)\n    return result\n",
+    "test_code": "import pytest\nfrom solution import moving_average\n\n# Normal cases\n\ndef test_basic_moving_average():\n    data = [1, 2, 3, 4, 5]\n    assert moving_average(data, 3) == [2.0, 3.0, 4.0]\n\n# Window size of 1 returns the original list\n\ndef test_window_one():\n    data = [10, 20, 30]\n    assert moving_average(data, 1) == [10.0, 20.0, 30.0]\n\n# Window larger than list returns empty list\n\ndef test_window_larger_than_list():\n    data = [1, 2]\n    assert moving_average(data, 5) == []\n\n# Empty input list\n\ndef test_empty_list():\n    assert moving_average([], 3) == []\n\n# Negative window size raises ValueError\n\ndef test_negative_window():\n    with pytest.raises(ValueError):\n        moving_average([1, 2, 3], -1)\n\n# Zero window size raises ValueError\n\ndef test_zero_window():\n    with pytest.raises(ValueError):\n        moving_average([1, 2, 3], 0)\n\n# Floating point numbers\n\ndef test_floats():\n    data = [0.5, 1.5, 2.5, 3.5]\n    assert moving_average(data, 2) == [1.0, 2.0, 3.0]\n\n# Large window size equal to list length\n\ndef test_window_equals_length():\n    data = [4, 5, 6]\n    assert moving_average(data, 3) == [5.0]\n"
+   },
+   "test_results": {
+    "status": "passed",
+    "passed": 8,
+    "failed": 0,
+    "tests": [
+     {
+      "name": "test_basic_moving_average",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_window_one",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_window_larger_than_list",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_empty_list",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_negative_window",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_zero_window",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_floats",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_window_equals_length",
+      "outcome": "passed",
+      "message": ""
+     }
+    ],
+    "output": "........                                                                 [100%]\n8 passed in 0.14s\n"
+   },
+   "lint_results": {
+    "status": "clean",
+    "blocking_count": 0,
+    "advisory_count": 0,
+    "issues": []
+   },
+   "review_summary": "The solution and tests are correct, well-structured, and fully satisfy the task requirements and coding standards.",
+   "new_findings": [],
+   "standard_sections": [
+    "CS-1",
+    "CS-2",
+    "CS-9",
+    "CS-7"
+   ]
+  }
+ ],
+ "status": "converged",
+ "error": null,
+ "baseline": {
+  "solution_code": "def moving_average(nums, window):\n    \"\"\"Return the moving average of *nums* with the given *window* size.\n\n    Parameters\n    ----------\n    nums : list[float]\n        Sequence of numbers to smooth.\n    window : int\n        Size of the sliding window. Must be >= 1.\n\n    Returns\n    -------\n    list[float]\n        A list of the averages of each consecutive run of *window* numbers.\n\n    Raises\n    ------\n    ValueError\n        If *window* is less than 1.\n    \"\"\"\n    if window < 1:\n        raise ValueError(\"window size must be at least 1\")\n    if len(nums) < window:\n        return []\n    result = []\n    # Compute the first window sum\n    window_sum = sum(nums[:window])\n    result.append(window_sum / window)\n    for i in range(window, len(nums)):\n        window_sum += nums[i] - nums[i - window]\n        result.append(window_sum / window)\n    return result\n",
+  "test_code": "import pytest\nfrom solution import moving_average\n\n# Normal cases\n\ndef test_basic_moving_average():\n    data = [1, 2, 3, 4, 5]\n    assert moving_average(data, 3) == [2.0, 3.0, 4.0]\n\n# Window size of 1 returns the original list\n\ndef test_window_one():\n    data = [10, 20, 30]\n    assert moving_average(data, 1) == [10.0, 20.0, 30.0]\n\n# Window larger than list returns empty list\n\ndef test_window_larger_than_list():\n    data = [1, 2]\n    assert moving_average(data, 5) == []\n\n# Empty input list\n\ndef test_empty_list():\n    assert moving_average([], 3) == []\n\n# Negative window size raises ValueError\n\ndef test_negative_window():\n    with pytest.raises(ValueError):\n        moving_average([1, 2, 3], -1)\n\n# Zero window size raises ValueError\n\ndef test_zero_window():\n    with pytest.raises(ValueError):\n        moving_average([1, 2, 3], 0)\n\n# Floating point numbers\n\ndef test_floats():\n    data = [0.5, 1.5, 2.5, 3.5]\n    assert moving_average(data, 2) == [1.0, 2.0, 3.0]\n\n# Large window size equal to list length\n\ndef test_window_equals_length():\n    data = [4, 5, 6]\n    assert moving_average(data, 3) == [5.0]\n"
+ },
+ "final": {
+  "solution_code": "def moving_average(nums, window):\n    \"\"\"Return the moving average of *nums* with the given *window* size.\n\n    Parameters\n    ----------\n    nums : list[float]\n        Sequence of numbers to smooth.\n    window : int\n        Size of the sliding window. Must be >= 1.\n\n    Returns\n    -------\n    list[float]\n        A list of the averages of each consecutive run of *window* numbers.\n\n    Raises\n    ------\n    ValueError\n        If *window* is less than 1.\n    \"\"\"\n    if window < 1:\n        raise ValueError(\"window size must be at least 1\")\n    if len(nums) < window:\n        return []\n    result = []\n    # Compute the first window sum\n    window_sum = sum(nums[:window])\n    result.append(window_sum / window)\n    for i in range(window, len(nums)):\n        window_sum += nums[i] - nums[i - window]\n        result.append(window_sum / window)\n    return result\n",
+  "test_code": "import pytest\nfrom solution import moving_average\n\n# Normal cases\n\ndef test_basic_moving_average():\n    data = [1, 2, 3, 4, 5]\n    assert moving_average(data, 3) == [2.0, 3.0, 4.0]\n\n# Window size of 1 returns the original list\n\ndef test_window_one():\n    data = [10, 20, 30]\n    assert moving_average(data, 1) == [10.0, 20.0, 30.0]\n\n# Window larger than list returns empty list\n\ndef test_window_larger_than_list():\n    data = [1, 2]\n    assert moving_average(data, 5) == []\n\n# Empty input list\n\ndef test_empty_list():\n    assert moving_average([], 3) == []\n\n# Negative window size raises ValueError\n\ndef test_negative_window():\n    with pytest.raises(ValueError):\n        moving_average([1, 2, 3], -1)\n\n# Zero window size raises ValueError\n\ndef test_zero_window():\n    with pytest.raises(ValueError):\n        moving_average([1, 2, 3], 0)\n\n# Floating point numbers\n\ndef test_floats():\n    data = [0.5, 1.5, 2.5, 3.5]\n    assert moving_average(data, 2) == [1.0, 2.0, 3.0]\n\n# Large window size equal to list length\n\ndef test_window_equals_length():\n    data = [4, 5, 6]\n    assert moving_average(data, 3) == [5.0]\n"
+ },
+ "findings": [],
+ "tool_calls": [
+  {
+   "iteration": 1,
+   "tool": "run_tests",
+   "is_error": false,
+   "seconds": 0.71,
+   "arguments": {
+    "solution_code": "def moving_average(nums, window):\n    \"\"\"Return the moving average of *nums* with the given *window* size.\n\n    Param...",
+    "test_code": "import pytest\nfrom solution import moving_average\n\n# Normal cases\n\ndef test_basic_moving_average():\n    data = [1, 2,..."
+   },
+   "result": "{\n  \"status\": \"passed\",\n  \"passed\": 8,\n  \"failed\": 0,\n  \"tests\": [\n    {\n      \"name\": \"test_basic_moving_average\",\n ..."
+  },
+  {
+   "iteration": 1,
+   "tool": "run_static_analysis",
+   "is_error": false,
+   "seconds": 0.11,
+   "arguments": {
+    "solution_code": "def moving_average(nums, window):\n    \"\"\"Return the moving average of *nums* with the given *window* size.\n\n    Param...",
+    "test_code": "import pytest\nfrom solution import moving_average\n\n# Normal cases\n\ndef test_basic_moving_average():\n    data = [1, 2,..."
+   },
+   "result": "{\n  \"status\": \"clean\",\n  \"blocking_count\": 0,\n  \"advisory_count\": 0,\n  \"issues\": []\n}"
+  },
+  {
+   "iteration": 1,
+   "tool": "review_code",
+   "is_error": false,
+   "seconds": 48.02,
+   "arguments": {
+    "task": "I track a daily number and want to smooth it with a moving average. Write a function called `moving_average` that\ntak...",
+    "solution_code": "def moving_average(nums, window):\n    \"\"\"Return the moving average of *nums* with the given *window* size.\n\n    Param...",
+    "test_code": "import pytest\nfrom solution import moving_average\n\n# Normal cases\n\ndef test_basic_moving_average():\n    data = [1, 2,...",
+    "test_results": "{\"status\": \"passed\", \"passed\": 8, \"failed\": 0, \"tests\": [{\"name\": \"test_basic_moving_average\", \"outcome\": \"passed\", \"...",
+    "lint_results": "{\"status\": \"clean\", \"blocking_count\": 0, \"advisory_count\": 0, \"issues\": []}",
+    "ledger": "[]"
+   },
+   "result": "{\n  \"review\": {\n    \"summary\": \"The solution and tests are correct, well-structured, and fully satisfy the task requi..."
+  }
+ ],
+ "usage": {
+  "generator": {
+   "prompt_tokens": 369,
+   "completion_tokens": 709,
+   "calls": 1,
+   "cached_calls": 0,
+   "model": "openai/gpt-oss-20b"
+  },
+  "reviewer": {
+   "prompt_tokens": 1840,
+   "completion_tokens": 36,
+   "calls": 1,
+   "cached_calls": 0,
+   "model": "gemini-3.5-flash-lite"
+  }
+ },
+ "final_unresolved_blocking": [],
+ "escalated_to_human": [],
+ "evaluation": {
+  "baseline": {
+   "all_passed": true,
+   "passed": 5,
+   "total": 5,
+   "failing": []
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 5,
+   "total": 5,
+   "failing": []
+  },
+  "baseline_lint_blocking": 0,
+  "final_lint_blocking": 0
+ }
+}

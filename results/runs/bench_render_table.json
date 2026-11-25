@@ -1,0 +1,523 @@
+{
+ "task_id": "render_table",
+ "task": "For our admin dashboard, write a function called `render_table` that turns a list of rows into an HTML table. Each row\nis a dictionary from column name to value, and the column names come from the first row. Use `<table>`, a header row\nof `<th>` cells and then one `<tr>` of `<td>` cells per row, with no spaces or line breaks between the tags. The values\nare comments typed in by our users. If a later row is missing a column, leave that cell empty. An empty list gives\n`<table></table>`.\n",
+ "started": "2026-11-25 16:28:28",
+ "generator_model": "openai/gpt-oss-20b",
+ "reviewer_model": "gemini-3.5-flash-lite",
+ "inject_wrong_finding": false,
+ "iterations": [
+  {
+   "iteration": 1,
+   "diff": "",
+   "reverted": false,
+   "code": {
+    "solution_code": "def render_table(rows):\n    \"\"\"Return an HTML table string for a list of row dictionaries.\n\n    Parameters\n    ----------\n    rows : list[dict]\n        Each dictionary maps column names to values. The column order is taken\n        from the first row. Missing keys in later rows produce empty cells.\n\n    Returns\n    -------\n    str\n        An HTML table with no whitespace between tags.\n    \"\"\"\n    if not rows:\n        return '<table></table>'\n    # Determine column order from the first row\n    first_row = rows[0]\n    columns = list(first_row.keys())\n    # Build header\n    header_cells = ''.join(f'<th>{col}</th>' for col in columns)\n    header = f'<tr>{header_cells}</tr>'\n    # Build body rows\n    body_rows = []\n    for row in rows:\n        cells = []\n        for col in columns:\n            val = row.get(col, '')\n            cells.append(f'<td>{val}</td>')\n        body_rows.append(f'<tr>{\"\".join(cells)}</tr>')\n    body = ''.join(body_rows)\n    return f'<table>{header}{body}</table>'\n",
+    "test_code": "import pytest\nfrom solution import render_table\n\n# Normal case\nrows = [\n    {'Name': 'Alice', 'Age': '30', 'City': 'NY'},\n    {'Name': 'Bob', 'Age': '25', 'City': 'LA'},\n]\nexpected = '<table>'\nexpected += '<tr><th>Name</th><th>Age</th><th>City</th></tr>'\nexpected += '<tr><td>Alice</td><td>30</td><td>NY</td></tr>'\nexpected += '<tr><td>Bob</td><td>25</td><td>LA</td></tr>'\nexpected += '</table>'\nassert render_table(rows) == expected\n\n# Missing columns in later rows\nrows_missing = [\n    {'Name': 'Alice', 'Age': '30', 'City': 'NY'},\n    {'Name': 'Bob', 'City': 'LA'},  # missing Age\n    {'Age': '40'},  # missing Name and City\n]\nexpected_missing = '<table>'\nexpected_missing += '<tr><th>Name</th><th>Age</th><th>City</th></tr>'\nexpected_missing += '<tr><td>Alice</td><td>30</td><td>NY</td></tr>'\nexpected_missing += '<tr><td>Bob</td><td></td><td>LA</td></tr>'\nexpected_missing += '<tr><td></td><td>40</td><td></td></tr>'\nexpected_missing += '</table>'\nassert render_table(rows_missing) == expected_missing\n\n# Empty list\nassert render_table([]) == '<table></table>'\n\n# Row with extra columns (ignored)\nrows_extra = [\n    {'Name': 'Alice', 'Age': '30'},\n    {'Name': 'Bob', 'Age': '25', 'City': 'LA'},\n]\nexpected_extra = '<table>'\nexpected_extra += '<tr><th>Name</th><th>Age</th></tr>'\nexpected_extra += '<tr><td>Alice</td><td>30</td></tr>'\nexpected_extra += '<tr><td>Bob</td><td>25</td></tr>'  # City ignored\nexpected_extra += '</table>'\nassert render_table(rows_extra) == expected_extra\n\n# First row empty dict\nassert render_table([{}]) == '<table></table>'\n"
+   },
+   "test_results": {
+    "status": "failed",
+    "passed": 0,
+    "failed": 1,
+    "tests": [
+     {
+      "name": "test_solution",
+      "outcome": "error",
+      "message": "collection failure"
+     }
+    ],
+    "output": "\n=================================== ERRORS ====================================\n______________________ ERROR collecting test_solution.py ______________________\ntest_solution.py:46: in <module>\n    assert render_table([{}]) == '<table></table>'\nE   AssertionError: assert '<table><tr></tr><tr></tr></table>' == '<table></table>'\nE    +  where '<table><tr></tr><tr></tr></table>' = <function render_table at 0x0000025B80087420>([{}])\n=========================== short test summary info ===========================\nERROR test_solution.py - AssertionError: assert '<table><tr></tr><tr></tr></t...\n!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.19s\n"
+   },
+   "lint_results": {
+    "status": "issues",
+    "blocking_count": 1,
+    "advisory_count": 0,
+    "issues": [
+     {
+      "code": "F401",
+      "message": "`pytest` imported but unused",
+      "file": "test_solution.py",
+      "line": 1,
+      "blocking": true
+     }
+    ]
+   },
+   "review_summary": "The solution fails to handle user input safely (XSS vulnerability) and has a logic error regarding empty dictionaries. The test suite is incorrectly structured as a script rather than a test module, causing collection errors.",
+   "new_findings": [
+    "F1",
+    "F2",
+    "F3",
+    "F4"
+   ],
+   "standard_sections": [
+    "CS-8",
+    "CS-9",
+    "CS-1",
+    "CS-3"
+   ],
+   "generator_decisions": [
+    {
+     "finding_id": "F1",
+     "decision": "accept",
+     "reason": "Escaping user input is required to prevent XSS as per the review."
+    },
+    {
+     "finding_id": "F2",
+     "decision": "accept",
+     "reason": "Handling empty first row correctly is necessary to match specification."
+    },
+    {
+     "finding_id": "F3",
+     "decision": "accept",
+     "reason": "Test file must define test functions for pytest collection."
+    },
+    {
+     "finding_id": "F4",
+     "decision": "decline",
+     "reason": "The unused import of pytest is harmless and not required for functionality; removing it is optional."
+    }
+   ]
+  },
+  {
+   "iteration": 2,
+   "diff": "--- a/solution.py\n+++ b/solution.py\n@@ -17,8 +17,12 @@\n     # Determine column order from the first row\n     first_row = rows[0]\n     columns = list(first_row.keys())\n+    if not columns:\n+        # If the first row has no columns, return empty table\n+        return '<table></table>'\n+    import html\n     # Build header\n-    header_cells = ''.join(f'<th>{col}</th>' for col in columns)\n+    header_cells = ''.join(f'<th>{html.escape(col)}</th>' for col in columns)\n     header = f'<tr>{header_cells}</tr>'\n     # Build body rows\n     body_rows = []\n@@ -26,7 +30,7 @@\n         cells = []\n         for col in columns:\n             val = row.get(col, '')\n-            cells.append(f'<td>{val}</td>')\n+            cells.append(f'<td>{html.escape(str(val))}</td>')\n         body_rows.append(f'<tr>{\"\".join(cells)}</tr>')\n     body = ''.join(body_rows)\n     return f'<table>{header}{body}</table>'\n--- a/test_solution.py\n+++ b/test_solution.py\n@@ -2,45 +2,65 @@\n from solution import render_table\n \n # Normal case\n-rows = [\n-    {'Name': 'Alice', 'Age': '30', 'City': 'NY'},\n-    {'Name': 'Bob', 'Age': '25', 'City': 'LA'},\n-]\n-expected = '<table>'\n-expected += '<tr><th>Name</th><th>Age</th><th>City</th></tr>'\n-expected += '<tr><td>Alice</td><td>30</td><td>NY</td></tr>'\n-expected += '<tr><td>Bob</td><td>25</td><td>LA</td></tr>'\n-expected += '</table>'\n-assert render_table(rows) == expected\n+\n+def test_normal_case():\n+    rows = [\n+        {'Name': 'Alice', 'Age': '30', 'City': 'NY'},\n+        {'Name': 'Bob', 'Age': '25', 'City': 'LA'},\n+    ]\n+    expected = '<table>'\n+    expected += '<tr><th>Name</th><th>Age</th><th>City</th></tr>'\n+    expected += '<tr><td>Alice</td><td>30</td><td>NY</td></tr>'\n+    expected += '<tr><td>Bob</td><td>25</td><td>LA</td></tr>'\n+    expected += '</table>'\n+    assert render_table(rows) == expected\n \n # Missing columns in later rows\n-rows_missing = [\n-    {'Name': 'Alice', 'Age': '30', 'City': 'NY'},\n-    {'Name': 'Bob', 'City': 'LA'},  # missing Age\n-    {'Age': '40'},  # missing Name and City\n-]\n-expected_missing = '<table>'\n-expected_missing += '<tr><th>Name</th><th>Age</th><th>City</th></tr>'\n-expected_missing += '<tr><td>Alice</td><td>30</td><td>NY</td></tr>'\n-expected_missing += '<tr><td>Bob</td><td></td><td>LA</td></tr>'\n-expected_missing += '<tr><td></td><td>40</td><td></td></tr>'\n-expected_missing += '</table>'\n-assert render_table(rows_missing) == expected_missing\n+\n+def test_missing_columns():\n+    rows_missing = [\n+        {'Name': 'Alice', 'Age': '30', 'City': 'NY'},\n+        {'Name': 'Bob', 'City': 'LA'},  # missing Age\n+        {'Age': '40'},  # missing Name and City\n+    ]\n+    expected_missing = '<table>'\n+    expected_missing += '<tr><th>Name</th><th>Age</th><th>City</th></tr>'\n+    expected_missing += '<tr><td>Alice</td><td>30</td><td>NY</td></tr>'\n+    expected_missing += '<tr><td>Bob</td><td></td><td>LA</td></tr>'\n+    expected_missing += '<tr><td></td><td>40</td><td></td></tr>'\n+    expected_missing += '</table>'\n+    assert render_table(rows_missing) == expected_missing\n \n # Empty list\n-assert render_table([]) == '<table></table>'\n+\n+def test_empty_list():\n+    assert render_table([]) == '<table></table>'\n \n # Row with extra columns (ignored)\n-rows_extra = [\n-    {'Name': 'Alice', 'Age': '30'},\n-    {'Name': 'Bob', 'Age': '25', 'City': 'LA'},\n-]\n-expected_extra = '<table>'\n-expected_extra += '<tr><th>Name</th><th>Age</th></tr>'\n-expected_extra += '<tr><td>Alice</td><td>30</td></tr>'\n-expected_extra += '<tr><td>Bob</td><td>25</td></tr>'  # City ignored\n-expected_extra += '</table>'\n-assert render_table(rows_extra) == expected_extra\n+\n+def test_extra_columns():\n+    rows_extra = [\n+        {'Name': 'Alice', 'Age': '30'},\n+        {'Name': 'Bob', 'Age': '25', 'City': 'LA'},\n+    ]\n+    expected_extra = '<table>'\n+    expected_extra += '<tr><th>Name</th><th>Age</th></tr>'\n+    expected_extra += '<tr><td>Alice</td><td>30</td></tr>'\n+    expected_extra += '<tr><td>Bob</td><td>25</td></tr>'  # City ignored\n+    expected_extra += '</table>'\n+    assert render_table(rows_extra) == expected_extra\n \n # First row empty dict\n-assert render_table([{}]) == '<table></table>'\n+\n+def test_first_row_empty_dict():\n+    assert render_table([{}]) == '<table></table>'\n+\n+# XSS protection test\n+\n+def test_xss_protection():\n+    rows = [{'Name': '<script>alert(1)</script>'}]\n+    expected = '<table>'\n+    expected += '<tr><th>Name</th></tr>'\n+    expected += '<tr><td>&lt;script&gt;alert(1)&lt;/script&gt;</td></tr>'\n+    expected += '</table>'\n+    assert render_table(rows) == expected",
+   "reverted": false,
+   "code": {
+    "solution_code": "def render_table(rows):\n    \"\"\"Return an HTML table string for a list of row dictionaries.\n\n    Parameters\n    ----------\n    rows : list[dict]\n        Each dictionary maps column names to values. The column order is taken\n        from the first row. Missing keys in later rows produce empty cells.\n\n    Returns\n    -------\n    str\n        An HTML table with no whitespace between tags.\n    \"\"\"\n    if not rows:\n        return '<table></table>'\n    # Determine column order from the first row\n    first_row = rows[0]\n    columns = list(first_row.keys())\n    if not columns:\n        # If the first row has no columns, return empty table\n        return '<table></table>'\n    import html\n    # Build header\n    header_cells = ''.join(f'<th>{html.escape(col)}</th>' for col in columns)\n    header = f'<tr>{header_cells}</tr>'\n    # Build body rows\n    body_rows = []\n    for row in rows:\n        cells = []\n        for col in columns:\n            val = row.get(col, '')\n            cells.append(f'<td>{html.escape(str(val))}</td>')\n        body_rows.append(f'<tr>{\"\".join(cells)}</tr>')\n    body = ''.join(body_rows)\n    return f'<table>{header}{body}</table>'",
+    "test_code": "import pytest\nfrom solution import render_table\n\n# Normal case\n\ndef test_normal_case():\n    rows = [\n        {'Name': 'Alice', 'Age': '30', 'City': 'NY'},\n        {'Name': 'Bob', 'Age': '25', 'City': 'LA'},\n    ]\n    expected = '<table>'\n    expected += '<tr><th>Name</th><th>Age</th><th>City</th></tr>'\n    expected += '<tr><td>Alice</td><td>30</td><td>NY</td></tr>'\n    expected += '<tr><td>Bob</td><td>25</td><td>LA</td></tr>'\n    expected += '</table>'\n    assert render_table(rows) == expected\n\n# Missing columns in later rows\n\ndef test_missing_columns():\n    rows_missing = [\n        {'Name': 'Alice', 'Age': '30', 'City': 'NY'},\n        {'Name': 'Bob', 'City': 'LA'},  # missing Age\n        {'Age': '40'},  # missing Name and City\n    ]\n    expected_missing = '<table>'\n    expected_missing += '<tr><th>Name</th><th>Age</th><th>City</th></tr>'\n    expected_missing += '<tr><td>Alice</td><td>30</td><td>NY</td></tr>'\n    expected_missing += '<tr><td>Bob</td><td></td><td>LA</td></tr>'\n    expected_missing += '<tr><td></td><td>40</td><td></td></tr>'\n    expected_missing += '</table>'\n    assert render_table(rows_missing) == expected_missing\n\n# Empty list\n\ndef test_empty_list():\n    assert render_table([]) == '<table></table>'\n\n# Row with extra columns (ignored)\n\ndef test_extra_columns():\n    rows_extra = [\n        {'Name': 'Alice', 'Age': '30'},\n        {'Name': 'Bob', 'Age': '25', 'City': 'LA'},\n    ]\n    expected_extra = '<table>'\n    expected_extra += '<tr><th>Name</th><th>Age</th></tr>'\n    expected_extra += '<tr><td>Alice</td><td>30</td></tr>'\n    expected_extra += '<tr><td>Bob</td><td>25</td></tr>'  # City ignored\n    expected_extra += '</table>'\n    assert render_table(rows_extra) == expected_extra\n\n# First row empty dict\n\ndef test_first_row_empty_dict():\n    assert render_table([{}]) == '<table></table>'\n\n# XSS protection test\n\ndef test_xss_protection():\n    rows = [{'Name': '<script>alert(1)</script>'}]\n    expected = '<table>'\n    expected += '<tr><th>Name</th></tr>'\n    expected += '<tr><td>&lt;script&gt;alert(1)&lt;/script&gt;</td></tr>'\n    expected += '</table>'\n    assert render_table(rows) == expected\n"
+   },
+   "test_results": {
+    "status": "passed",
+    "passed": 6,
+    "failed": 0,
+    "tests": [
+     {
+      "name": "test_normal_case",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_missing_columns",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_empty_list",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_extra_columns",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_first_row_empty_dict",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_xss_protection",
+      "outcome": "passed",
+      "message": ""
+     }
+    ],
+    "output": "......                                                                   [100%]\n6 passed in 0.10s\n"
+   },
+   "lint_results": {
+    "status": "issues",
+    "blocking_count": 1,
+    "advisory_count": 0,
+    "issues": [
+     {
+      "code": "F401",
+      "message": "`pytest` imported but unused",
+      "file": "test_solution.py",
+      "line": 1,
+      "blocking": true
+     }
+    ]
+   },
+   "review_summary": "The code and tests are fully correct, secure, and pass all requirements successfully. The only minor static analysis issue (unused import) was previously declined by the author as harmless, and the code meets all standards.",
+   "new_findings": [],
+   "standard_sections": [
+    "CS-5",
+    "CS-8",
+    "CS-9",
+    "CS-1"
+   ],
+   "generator_decisions": [
+    {
+     "finding_id": "F401",
+     "decision": "accept",
+     "reason": "The import of pytest is unused; removing it fixes the lint issue without affecting test functionality."
+    }
+   ]
+  },
+  {
+   "iteration": 3,
+   "diff": "--- a/test_solution.py\n+++ b/test_solution.py\n@@ -1,4 +1,3 @@\n-import pytest\n from solution import render_table\n \n # Normal case",
+   "reverted": false,
+   "code": {
+    "solution_code": "def render_table(rows):\n    \"\"\"Return an HTML table string for a list of row dictionaries.\n\n    Parameters\n    ----------\n    rows : list[dict]\n        Each dictionary maps column names to values. The column order is taken\n        from the first row. Missing keys in later rows produce empty cells.\n\n    Returns\n    -------\n    str\n        An HTML table with no whitespace between tags.\n    \"\"\"\n    if not rows:\n        return '<table></table>'\n    # Determine column order from the first row\n    first_row = rows[0]\n    columns = list(first_row.keys())\n    if not columns:\n        # If the first row has no columns, return empty table\n        return '<table></table>'\n    import html\n    # Build header\n    header_cells = ''.join(f'<th>{html.escape(col)}</th>' for col in columns)\n    header = f'<tr>{header_cells}</tr>'\n    # Build body rows\n    body_rows = []\n    for row in rows:\n        cells = []\n        for col in columns:\n            val = row.get(col, '')\n            cells.append(f'<td>{html.escape(str(val))}</td>')\n        body_rows.append(f'<tr>{\"\".join(cells)}</tr>')\n    body = ''.join(body_rows)\n    return f'<table>{header}{body}</table>'",
+    "test_code": "from solution import render_table\n\n# Normal case\n\ndef test_normal_case():\n    rows = [\n        {'Name': 'Alice', 'Age': '30', 'City': 'NY'},\n        {'Name': 'Bob', 'Age': '25', 'City': 'LA'},\n    ]\n    expected = '<table>'\n    expected += '<tr><th>Name</th><th>Age</th><th>City</th></tr>'\n    expected += '<tr><td>Alice</td><td>30</td><td>NY</td></tr>'\n    expected += '<tr><td>Bob</td><td>25</td><td>LA</td></tr>'\n    expected += '</table>'\n    assert render_table(rows) == expected\n\n# Missing columns in later rows\n\ndef test_missing_columns():\n    rows_missing = [\n        {'Name': 'Alice', 'Age': '30', 'City': 'NY'},\n        {'Name': 'Bob', 'City': 'LA'},  # missing Age\n        {'Age': '40'},  # missing Name and City\n    ]\n    expected_missing = '<table>'\n    expected_missing += '<tr><th>Name</th><th>Age</th><th>City</th></tr>'\n    expected_missing += '<tr><td>Alice</td><td>30</td><td>NY</td></tr>'\n    expected_missing += '<tr><td>Bob</td><td></td><td>LA</td></tr>'\n    expected_missing += '<tr><td></td><td>40</td><td></td></tr>'\n    expected_missing += '</table>'\n    assert render_table(rows_missing) == expected_missing\n\n# Empty list\n\ndef test_empty_list():\n    assert render_table([]) == '<table></table>'\n\n# Row with extra columns (ignored)\n\ndef test_extra_columns():\n    rows_extra = [\n        {'Name': 'Alice', 'Age': '30'},\n        {'Name': 'Bob', 'Age': '25', 'City': 'LA'},\n    ]\n    expected_extra = '<table>'\n    expected_extra += '<tr><th>Name</th><th>Age</th></tr>'\n    expected_extra += '<tr><td>Alice</td><td>30</td></tr>'\n    expected_extra += '<tr><td>Bob</td><td>25</td></tr>'  # City ignored\n    expected_extra += '</table>'\n    assert render_table(rows_extra) == expected_extra\n\n# First row empty dict\n\ndef test_first_row_empty_dict():\n    assert render_table([{}]) == '<table></table>'\n\n# XSS protection test\n\ndef test_xss_protection():\n    rows = [{'Name': '<script>alert(1)</script>'}]\n    expected = '<table>'\n    expected += '<tr><th>Name</th></tr>'\n    expected += '<tr><td>&lt;script&gt;alert(1)&lt;/script&gt;</td></tr>'\n    expected += '</table>'\n    assert render_table(rows) == expected"
+   },
+   "test_results": {
+    "status": "passed",
+    "passed": 6,
+    "failed": 0,
+    "tests": [
+     {
+      "name": "test_normal_case",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_missing_columns",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_empty_list",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_extra_columns",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_first_row_empty_dict",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_xss_protection",
+      "outcome": "passed",
+      "message": ""
+     }
+    ],
+    "output": "......                                                                   [100%]\n6 passed in 0.08s\n"
+   },
+   "lint_results": {
+    "status": "clean",
+    "blocking_count": 0,
+    "advisory_count": 0,
+    "issues": []
+   },
+   "review_summary": "The code and tests are fully correct, pass all static analysis and pytest execution, and properly adhere to the specification and security guidelines (HTML escaping, empty table handling, and column mapping).",
+   "new_findings": [],
+   "standard_sections": [
+    "CS-5",
+    "CS-8",
+    "CS-1",
+    "CS-9"
+   ]
+  }
+ ],
+ "status": "converged",
+ "error": null,
+ "baseline": {
+  "solution_code": "def render_table(rows):\n    \"\"\"Return an HTML table string for a list of row dictionaries.\n\n    Parameters\n    ----------\n    rows : list[dict]\n        Each dictionary maps column names to values. The column order is taken\n        from the first row. Missing keys in later rows produce empty cells.\n\n    Returns\n    -------\n    str\n        An HTML table with no whitespace between tags.\n    \"\"\"\n    if not rows:\n        return '<table></table>'\n    # Determine column order from the first row\n    first_row = rows[0]\n    columns = list(first_row.keys())\n    # Build header\n    header_cells = ''.join(f'<th>{col}</th>' for col in columns)\n    header = f'<tr>{header_cells}</tr>'\n    # Build body rows\n    body_rows = []\n    for row in rows:\n        cells = []\n        for col in columns:\n            val = row.get(col, '')\n            cells.append(f'<td>{val}</td>')\n        body_rows.append(f'<tr>{\"\".join(cells)}</tr>')\n    body = ''.join(body_rows)\n    return f'<table>{header}{body}</table>'\n",
+  "test_code": "import pytest\nfrom solution import render_table\n\n# Normal case\nrows = [\n    {'Name': 'Alice', 'Age': '30', 'City': 'NY'},\n    {'Name': 'Bob', 'Age': '25', 'City': 'LA'},\n]\nexpected = '<table>'\nexpected += '<tr><th>Name</th><th>Age</th><th>City</th></tr>'\nexpected += '<tr><td>Alice</td><td>30</td><td>NY</td></tr>'\nexpected += '<tr><td>Bob</td><td>25</td><td>LA</td></tr>'\nexpected += '</table>'\nassert render_table(rows) == expected\n\n# Missing columns in later rows\nrows_missing = [\n    {'Name': 'Alice', 'Age': '30', 'City': 'NY'},\n    {'Name': 'Bob', 'City': 'LA'},  # missing Age\n    {'Age': '40'},  # missing Name and City\n]\nexpected_missing = '<table>'\nexpected_missing += '<tr><th>Name</th><th>Age</th><th>City</th></tr>'\nexpected_missing += '<tr><td>Alice</td><td>30</td><td>NY</td></tr>'\nexpected_missing += '<tr><td>Bob</td><td></td><td>LA</td></tr>'\nexpected_missing += '<tr><td></td><td>40</td><td></td></tr>'\nexpected_missing += '</table>'\nassert render_table(rows_missing) == expected_missing\n\n# Empty list\nassert render_table([]) == '<table></table>'\n\n# Row with extra columns (ignored)\nrows_extra = [\n    {'Name': 'Alice', 'Age': '30'},\n    {'Name': 'Bob', 'Age': '25', 'City': 'LA'},\n]\nexpected_extra = '<table>'\nexpected_extra += '<tr><th>Name</th><th>Age</th></tr>'\nexpected_extra += '<tr><td>Alice</td><td>30</td></tr>'\nexpected_extra += '<tr><td>Bob</td><td>25</td></tr>'  # City ignored\nexpected_extra += '</table>'\nassert render_table(rows_extra) == expected_extra\n\n# First row empty dict\nassert render_table([{}]) == '<table></table>'\n"
+ },
+ "final": {
+  "solution_code": "def render_table(rows):\n    \"\"\"Return an HTML table string for a list of row dictionaries.\n\n    Parameters\n    ----------\n    rows : list[dict]\n        Each dictionary maps column names to values. The column order is taken\n        from the first row. Missing keys in later rows produce empty cells.\n\n    Returns\n    -------\n    str\n        An HTML table with no whitespace between tags.\n    \"\"\"\n    if not rows:\n        return '<table></table>'\n    # Determine column order from the first row\n    first_row = rows[0]\n    columns = list(first_row.keys())\n    if not columns:\n        # If the first row has no columns, return empty table\n        return '<table></table>'\n    import html\n    # Build header\n    header_cells = ''.join(f'<th>{html.escape(col)}</th>' for col in columns)\n    header = f'<tr>{header_cells}</tr>'\n    # Build body rows\n    body_rows = []\n    for row in rows:\n        cells = []\n        for col in columns:\n            val = row.get(col, '')\n            cells.append(f'<td>{html.escape(str(val))}</td>')\n        body_rows.append(f'<tr>{\"\".join(cells)}</tr>')\n    body = ''.join(body_rows)\n    return f'<table>{header}{body}</table>'",
+  "test_code": "from solution import render_table\n\n# Normal case\n\ndef test_normal_case():\n    rows = [\n        {'Name': 'Alice', 'Age': '30', 'City': 'NY'},\n        {'Name': 'Bob', 'Age': '25', 'City': 'LA'},\n    ]\n    expected = '<table>'\n    expected += '<tr><th>Name</th><th>Age</th><th>City</th></tr>'\n    expected += '<tr><td>Alice</td><td>30</td><td>NY</td></tr>'\n    expected += '<tr><td>Bob</td><td>25</td><td>LA</td></tr>'\n    expected += '</table>'\n    assert render_table(rows) == expected\n\n# Missing columns in later rows\n\ndef test_missing_columns():\n    rows_missing = [\n        {'Name': 'Alice', 'Age': '30', 'City': 'NY'},\n        {'Name': 'Bob', 'City': 'LA'},  # missing Age\n        {'Age': '40'},  # missing Name and City\n    ]\n    expected_missing = '<table>'\n    expected_missing += '<tr><th>Name</th><th>Age</th><th>City</th></tr>'\n    expected_missing += '<tr><td>Alice</td><td>30</td><td>NY</td></tr>'\n    expected_missing += '<tr><td>Bob</td><td></td><td>LA</td></tr>'\n    expected_missing += '<tr><td></td><td>40</td><td></td></tr>'\n    expected_missing += '</table>'\n    assert render_table(rows_missing) == expected_missing\n\n# Empty list\n\ndef test_empty_list():\n    assert render_table([]) == '<table></table>'\n\n# Row with extra columns (ignored)\n\ndef test_extra_columns():\n    rows_extra = [\n        {'Name': 'Alice', 'Age': '30'},\n        {'Name': 'Bob', 'Age': '25', 'City': 'LA'},\n    ]\n    expected_extra = '<table>'\n    expected_extra += '<tr><th>Name</th><th>Age</th></tr>'\n    expected_extra += '<tr><td>Alice</td><td>30</td></tr>'\n    expected_extra += '<tr><td>Bob</td><td>25</td></tr>'  # City ignored\n    expected_extra += '</table>'\n    assert render_table(rows_extra) == expected_extra\n\n# First row empty dict\n\ndef test_first_row_empty_dict():\n    assert render_table([{}]) == '<table></table>'\n\n# XSS protection test\n\ndef test_xss_protection():\n    rows = [{'Name': '<script>alert(1)</script>'}]\n    expected = '<table>'\n    expected += '<tr><th>Name</th></tr>'\n    expected += '<tr><td>&lt;script&gt;alert(1)&lt;/script&gt;</td></tr>'\n    expected += '</table>'\n    assert render_table(rows) == expected"
+ },
+ "findings": [
+  {
+   "severity": "critical",
+   "category": "security",
+   "file": "solution.py",
+   "line": 29,
+   "title": "XSS vulnerability in HTML generation",
+   "rationale": "The function directly embeds user-provided values into HTML without escaping special characters (e.g., <, >, &). This allows for Cross-Site Scripting (XSS) attacks if the input contains malicious scripts.",
+   "suggested_fix": "Use html.escape() from the standard library to sanitize all values before embedding them in the string.",
+   "evidence": "",
+   "standard_ref": "",
+   "id": "F1",
+   "iteration": 1,
+   "blocking": false,
+   "status": "fixed",
+   "history": [
+    {
+     "iteration": 1,
+     "actor": "reviewer",
+     "status": "open",
+     "reason": ""
+    },
+    {
+     "iteration": 1,
+     "actor": "generator",
+     "status": "accepted",
+     "reason": "Escaping user input is required to prevent XSS as per the review."
+    },
+    {
+     "iteration": 2,
+     "actor": "orchestrator",
+     "status": "fixed",
+     "reason": "revision kept (no regression)"
+    }
+   ],
+   "injected": false
+  },
+  {
+   "severity": "major",
+   "category": "bug",
+   "file": "solution.py",
+   "line": 19,
+   "title": "Incorrect handling of empty dictionaries in rows",
+   "rationale": "The code assumes that if the first row is an empty dictionary, the result should be an empty table. However, the current implementation produces '<table><tr></tr><tr></tr></table>' for a list containing an empty dict, which is inconsistent with the requirement that an empty list gives '<table></table>'.",
+   "suggested_fix": "If the first row is empty, the columns list is empty. The logic should handle this gracefully or explicitly check for empty keys.",
+   "evidence": "",
+   "standard_ref": "",
+   "id": "F2",
+   "iteration": 1,
+   "blocking": false,
+   "status": "fixed",
+   "history": [
+    {
+     "iteration": 1,
+     "actor": "reviewer",
+     "status": "open",
+     "reason": ""
+    },
+    {
+     "iteration": 1,
+     "actor": "generator",
+     "status": "accepted",
+     "reason": "Handling empty first row correctly is necessary to match specification."
+    },
+    {
+     "iteration": 2,
+     "actor": "orchestrator",
+     "status": "fixed",
+     "reason": "revision kept (no regression)"
+    }
+   ],
+   "injected": false
+  },
+  {
+   "severity": "major",
+   "category": "test_gap",
+   "file": "test_solution.py",
+   "line": 1,
+   "title": "Test file is not a valid pytest module",
+   "rationale": "The test file executes code at the module level instead of defining test functions. This causes pytest to fail during collection and prevents proper test reporting.",
+   "suggested_fix": "Wrap the assertions inside functions prefixed with 'test_'.",
+   "evidence": "",
+   "standard_ref": "",
+   "id": "F3",
+   "iteration": 1,
+   "blocking": false,
+   "status": "fixed",
+   "history": [
+    {
+     "iteration": 1,
+     "actor": "reviewer",
+     "status": "open",
+     "reason": ""
+    },
+    {
+     "iteration": 1,
+     "actor": "generator",
+     "status": "accepted",
+     "reason": "Test file must define test functions for pytest collection."
+    },
+    {
+     "iteration": 2,
+     "actor": "orchestrator",
+     "status": "fixed",
+     "reason": "revision kept (no regression)"
+    }
+   ],
+   "injected": false
+  },
+  {
+   "severity": "minor",
+   "category": "style",
+   "file": "test_solution.py",
+   "line": 1,
+   "title": "Unused import",
+   "rationale": "The 'pytest' module is imported but never used in the test file.",
+   "suggested_fix": "Remove the unused import.",
+   "evidence": "",
+   "standard_ref": "",
+   "id": "F4",
+   "iteration": 1,
+   "blocking": false,
+   "status": "withdrawn",
+   "history": [
+    {
+     "iteration": 1,
+     "actor": "reviewer",
+     "status": "open",
+     "reason": ""
+    },
+    {
+     "iteration": 1,
+     "actor": "generator",
+     "status": "declined",
+     "reason": "The unused import of pytest is harmless and not required for functionality; removing it is optional."
+    },
+    {
+     "iteration": 2,
+     "actor": "reviewer",
+     "status": "withdrawn",
+     "reason": "While ruff flagged the unused import, it is a minor stylistic/linting detail that does not block functionality."
+    }
+   ],
+   "injected": false
+  }
+ ],
+ "tool_calls": [
+  {
+   "iteration": 1,
+   "tool": "run_tests",
+   "is_error": false,
+   "seconds": 0.69,
+   "arguments": {
+    "solution_code": "def render_table(rows):\n    \"\"\"Return an HTML table string for a list of row dictionaries.\n\n    Parameters\n    ------...",
+    "test_code": "import pytest\nfrom solution import render_table\n\n# Normal case\nrows = [\n    {'Name': 'Alice', 'Age': '30', 'City': 'N..."
+   },
+   "result": "{\n  \"status\": \"failed\",\n  \"passed\": 0,\n  \"failed\": 1,\n  \"tests\": [\n    {\n      \"name\": \"test_solution\",\n      \"outcom..."
+  },
+  {
+   "iteration": 1,
+   "tool": "run_static_analysis",
+   "is_error": false,
+   "seconds": 0.11,
+   "arguments": {
+    "solution_code": "def render_table(rows):\n    \"\"\"Return an HTML table string for a list of row dictionaries.\n\n    Parameters\n    ------...",
+    "test_code": "import pytest\nfrom solution import render_table\n\n# Normal case\nrows = [\n    {'Name': 'Alice', 'Age': '30', 'City': 'N..."
+   },
+   "result": "{\n  \"status\": \"issues\",\n  \"blocking_count\": 1,\n  \"advisory_count\": 0,\n  \"issues\": [\n    {\n      \"code\": \"F401\",\n     ..."
+  },
+  {
+   "iteration": 1,
+   "tool": "review_code",
+   "is_error": false,
+   "seconds": 382.65,
+   "arguments": {
+    "task": "For our admin dashboard, write a function called `render_table` that turns a list of rows into an HTML table. Each ro...",
+    "solution_code": "def render_table(rows):\n    \"\"\"Return an HTML table string for a list of row dictionaries.\n\n    Parameters\n    ------...",
+    "test_code": "import pytest\nfrom solution import render_table\n\n# Normal case\nrows = [\n    {'Name': 'Alice', 'Age': '30', 'City': 'N...",
+    "test_results": "{\"status\": \"failed\", \"passed\": 0, \"failed\": 1, \"tests\": [{\"name\": \"test_solution\", \"outcome\": \"error\", \"message\": \"co...",
+    "lint_results": "{\"status\": \"issues\", \"blocking_count\": 1, \"advisory_count\": 0, \"issues\": [{\"code\": \"F401\", \"message\": \"`pytest` impor...",
+    "ledger": "[]"
+   },
+   "result": "{\n  \"review\": {\n    \"summary\": \"The solution fails to handle user input safely (XSS vulnerability) and has a logic er..."
+  },
+  {
+   "iteration": 2,
+   "tool": "run_tests",
+   "is_error": false,
+   "seconds": 0.6,
+   "arguments": {
+    "solution_code": "def render_table(rows):\n    \"\"\"Return an HTML table string for a list of row dictionaries.\n\n    Parameters\n    ------...",
+    "test_code": "import pytest\nfrom solution import render_table\n\n# Normal case\n\ndef test_normal_case():\n    rows = [\n        {'Name':..."
+   },
+   "result": "{\n  \"status\": \"passed\",\n  \"passed\": 6,\n  \"failed\": 0,\n  \"tests\": [\n    {\n      \"name\": \"test_normal_case\",\n      \"out..."
+  },
+  {
+   "iteration": 2,
+   "tool": "run_static_analysis",
+   "is_error": false,
+   "seconds": 0.1,
+   "arguments": {
+    "solution_code": "def render_table(rows):\n    \"\"\"Return an HTML table string for a list of row dictionaries.\n\n    Parameters\n    ------...",
+    "test_code": "import pytest\nfrom solution import render_table\n\n# Normal case\n\ndef test_normal_case():\n    rows = [\n        {'Name':..."
+   },
+   "result": "{\n  \"status\": \"issues\",\n  \"blocking_count\": 1,\n  \"advisory_count\": 0,\n  \"issues\": [\n    {\n      \"code\": \"F401\",\n     ..."
+  },
+  {
+   "iteration": 2,
+   "tool": "review_code",
+   "is_error": false,
+   "seconds": 1.58,
+   "arguments": {
+    "task": "For our admin dashboard, write a function called `render_table` that turns a list of rows into an HTML table. Each ro...",
+    "solution_code": "def render_table(rows):\n    \"\"\"Return an HTML table string for a list of row dictionaries.\n\n    Parameters\n    ------...",
+    "test_code": "import pytest\nfrom solution import render_table\n\n# Normal case\n\ndef test_normal_case():\n    rows = [\n        {'Name':...",
+    "test_results": "{\"status\": \"passed\", \"passed\": 6, \"failed\": 0, \"tests\": [{\"name\": \"test_normal_case\", \"outcome\": \"passed\", \"message\":...",
+    "lint_results": "{\"status\": \"issues\", \"blocking_count\": 1, \"advisory_count\": 0, \"issues\": [{\"code\": \"F401\", \"message\": \"`pytest` impor...",
+    "ledger": "[{\"id\": \"F1\", \"round\": 1, \"severity\": \"critical\", \"file\": \"solution.py\", \"line\": 29, \"title\": \"XSS vulnerability in H..."
+   },
+   "result": "{\n  \"review\": {\n    \"summary\": \"The code and tests are fully correct, secure, and pass all requirements successfully...."
+  },
+  {
+   "iteration": 3,
+   "tool": "run_tests",
+   "is_error": false,
+   "seconds": 0.57,
+   "arguments": {
+    "solution_code": "def render_table(rows):\n    \"\"\"Return an HTML table string for a list of row dictionaries.\n\n    Parameters\n    ------...",
+    "test_code": "from solution import render_table\n\n# Normal case\n\ndef test_normal_case():\n    rows = [\n        {'Name': 'Alice', 'Age..."
+   },
+   "result": "{\n  \"status\": \"passed\",\n  \"passed\": 6,\n  \"failed\": 0,\n  \"tests\": [\n    {\n      \"name\": \"test_normal_case\",\n      \"out..."
+  },
+  {
+   "iteration": 3,
+   "tool": "run_static_analysis",
+   "is_error": false,
+   "seconds": 0.1,
+   "arguments": {
+    "solution_code": "def render_table(rows):\n    \"\"\"Return an HTML table string for a list of row dictionaries.\n\n    Parameters\n    ------...",
+    "test_code": "from solution import render_table\n\n# Normal case\n\ndef test_normal_case():\n    rows = [\n        {'Name': 'Alice', 'Age..."
+   },
+   "result": "{\n  \"status\": \"clean\",\n  \"blocking_count\": 0,\n  \"advisory_count\": 0,\n  \"issues\": []\n}"
+  },
+  {
+   "iteration": 3,
+   "tool": "review_code",
+   "is_error": false,
+   "seconds": 1.96,
+   "arguments": {
+    "task": "For our admin dashboard, write a function called `render_table` that turns a list of rows into an HTML table. Each ro...",
+    "solution_code": "def render_table(rows):\n    \"\"\"Return an HTML table string for a list of row dictionaries.\n\n    Parameters\n    ------...",
+    "test_code": "from solution import render_table\n\n# Normal case\n\ndef test_normal_case():\n    rows = [\n        {'Name': 'Alice', 'Age...",
+    "test_results": "{\"status\": \"passed\", \"passed\": 6, \"failed\": 0, \"tests\": [{\"name\": \"test_normal_case\", \"outcome\": \"passed\", \"message\":...",
+    "lint_results": "{\"status\": \"clean\", \"blocking_count\": 0, \"advisory_count\": 0, \"issues\": []}",
+    "ledger": "[{\"id\": \"F1\", \"round\": 1, \"severity\": \"critical\", \"file\": \"solution.py\", \"line\": 29, \"title\": \"XSS vulnerability in H..."
+   },
+   "result": "{\n  \"review\": {\n    \"summary\": \"The code and tests are fully correct, pass all static analysis and pytest execution, ..."
+  }
+ ],
+ "usage": {
+  "generator": {
+   "prompt_tokens": 4423,
+   "completion_tokens": 3412,
+   "calls": 3,
+   "cached_calls": 1,
+   "model": "openai/gpt-oss-20b"
+  },
+  "reviewer": {
+   "prompt_tokens": 7435,
+   "completion_tokens": 734,
+   "calls": 3,
+   "cached_calls": 0,
+   "model": "gemini-3.5-flash-lite"
+  }
+ },
+ "final_unresolved_blocking": [],
+ "escalated_to_human": [],
+ "evaluation": {
+  "baseline": {
+   "all_passed": false,
+   "passed": 3,
+   "total": 4,
+   "failing": [
+    "test_values_are_escaped"
+   ]
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 4,
+   "total": 4,
+   "failing": []
+  },
+  "baseline_lint_blocking": 1,
+  "final_lint_blocking": 0
+ }
+}

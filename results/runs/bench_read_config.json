@@ -1,0 +1,150 @@
+{
+ "task_id": "read_config",
+ "task": "Our app reads its settings from a text file where each line looks like `name=value`. Write a function called\n`read_config` that takes the path of the file and gives back the settings as a dictionary. Empty lines and lines\nstarting with `#` should be skipped, and spaces around names and values should be ignored. If a line doesn't follow\nthe `name=value` format, raise an error that says which line number is wrong.\n",
+ "started": "2026-11-25 16:07:22",
+ "generator_model": "openai/gpt-oss-20b",
+ "reviewer_model": "gemini-3.5-flash-lite",
+ "inject_wrong_finding": false,
+ "iterations": [
+  {
+   "iteration": 1,
+   "diff": "",
+   "reverted": false,
+   "code": {
+    "solution_code": "def read_config(path):\n    \"\"\"Read a simple key=value configuration file.\n\n    Parameters\n    ----------\n    path : str\n        Path to the configuration file.\n\n    Returns\n    -------\n    dict\n        Dictionary of configuration values.\n\n    Raises\n    ------\n    ValueError\n        If a non\u2011empty, non\u2011comment line does not contain exactly one ``=``.\n    \"\"\"\n    config = {}\n    with open(path, 'r', encoding='utf-8') as f:\n        for lineno, raw_line in enumerate(f, start=1):\n            line = raw_line.strip()\n            if not line or line.startswith('#'):\n                continue\n            if '=' not in line:\n                raise ValueError(f\"Line {lineno} is not a valid key=value pair\")\n            # Split only on the first '=' to allow '=' in values\n            key, value = line.split('=', 1)\n            key = key.strip()\n            value = value.strip()\n            config[key] = value\n    return config\n",
+    "test_code": "import os\nimport tempfile\nimport pytest\n\nfrom solution import read_config\n\ndef write_temp_file(contents):\n    tmp = tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8')\n    tmp.write(contents)\n    tmp.close()\n    return tmp.name\n\n\ndef test_basic_config():\n    content = \"\"\"# Sample config\n    host = localhost\n    port= 8080\n    debug = True\n    \"\"\"\n    path = write_temp_file(content)\n    try:\n        cfg = read_config(path)\n        assert cfg == {\"host\": \"localhost\", \"port\": \"8080\", \"debug\": \"True\"}\n    finally:\n        os.unlink(path)\n\n\ndef test_empty_and_comment_lines():\n    content = \"\"\"# comment\n\n    key1=value1\n\n    # another comment\n    key2 = value2\n    \"\"\"\n    path = write_temp_file(content)\n    try:\n        cfg = read_config(path)\n        assert cfg == {\"key1\": \"value1\", \"key2\": \"value2\"}\n    finally:\n        os.unlink(path)\n\n\ndef test_spaces_around_keys_and_values():\n    content = \"\"\"   key   =    value   \n    another=val\n    \"\"\"\n    path = write_temp_file(content)\n    try:\n        cfg = read_config(path)\n        assert cfg == {\"key\": \"value\", \"another\": \"val\"}\n    finally:\n        os.unlink(path)\n\n\ndef test_invalid_line_raises_error():\n    content = \"\"\"valid=ok\n    invalid_line_without_equal\n    \"\"\"\n    path = write_temp_file(content)\n    try:\n        with pytest.raises(ValueError) as excinfo:\n            read_config(path)\n        assert \"Line 2\" in str(excinfo.value)\n    finally:\n        os.unlink(path)\n\n\ndef test_multiple_equals_in_value():\n    content = \"\"\"path=/usr/local/bin:/usr/bin\n    \"\"\"\n    path = write_temp_file(content)\n    try:\n        cfg = read_config(path)\n        assert cfg == {\"path\": \"/usr/local/bin:/usr/bin\"}\n    finally:\n        os.unlink(path)\n"
+   },
+   "test_results": {
+    "status": "passed",
+    "passed": 5,
+    "failed": 0,
+    "tests": [
+     {
+      "name": "test_basic_config",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_empty_and_comment_lines",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_spaces_around_keys_and_values",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_invalid_line_raises_error",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_multiple_equals_in_value",
+      "outcome": "passed",
+      "message": ""
+     }
+    ],
+    "output": ".....                                                                    [100%]\n5 passed in 0.11s\n"
+   },
+   "lint_results": {
+    "status": "clean",
+    "blocking_count": 0,
+    "advisory_count": 0,
+    "issues": []
+   },
+   "review_summary": "The code and tests are fully correct, robust, adhere to all coding standards, and pass successfully.",
+   "new_findings": [],
+   "standard_sections": [
+    "CS-3",
+    "CS-1",
+    "CS-9",
+    "CS-2"
+   ]
+  }
+ ],
+ "status": "converged",
+ "error": null,
+ "baseline": {
+  "solution_code": "def read_config(path):\n    \"\"\"Read a simple key=value configuration file.\n\n    Parameters\n    ----------\n    path : str\n        Path to the configuration file.\n\n    Returns\n    -------\n    dict\n        Dictionary of configuration values.\n\n    Raises\n    ------\n    ValueError\n        If a non\u2011empty, non\u2011comment line does not contain exactly one ``=``.\n    \"\"\"\n    config = {}\n    with open(path, 'r', encoding='utf-8') as f:\n        for lineno, raw_line in enumerate(f, start=1):\n            line = raw_line.strip()\n            if not line or line.startswith('#'):\n                continue\n            if '=' not in line:\n                raise ValueError(f\"Line {lineno} is not a valid key=value pair\")\n            # Split only on the first '=' to allow '=' in values\n            key, value = line.split('=', 1)\n            key = key.strip()\n            value = value.strip()\n            config[key] = value\n    return config\n",
+  "test_code": "import os\nimport tempfile\nimport pytest\n\nfrom solution import read_config\n\ndef write_temp_file(contents):\n    tmp = tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8')\n    tmp.write(contents)\n    tmp.close()\n    return tmp.name\n\n\ndef test_basic_config():\n    content = \"\"\"# Sample config\n    host = localhost\n    port= 8080\n    debug = True\n    \"\"\"\n    path = write_temp_file(content)\n    try:\n        cfg = read_config(path)\n        assert cfg == {\"host\": \"localhost\", \"port\": \"8080\", \"debug\": \"True\"}\n    finally:\n        os.unlink(path)\n\n\ndef test_empty_and_comment_lines():\n    content = \"\"\"# comment\n\n    key1=value1\n\n    # another comment\n    key2 = value2\n    \"\"\"\n    path = write_temp_file(content)\n    try:\n        cfg = read_config(path)\n        assert cfg == {\"key1\": \"value1\", \"key2\": \"value2\"}\n    finally:\n        os.unlink(path)\n\n\ndef test_spaces_around_keys_and_values():\n    content = \"\"\"   key   =    value   \n    another=val\n    \"\"\"\n    path = write_temp_file(content)\n    try:\n        cfg = read_config(path)\n        assert cfg == {\"key\": \"value\", \"another\": \"val\"}\n    finally:\n        os.unlink(path)\n\n\ndef test_invalid_line_raises_error():\n    content = \"\"\"valid=ok\n    invalid_line_without_equal\n    \"\"\"\n    path = write_temp_file(content)\n    try:\n        with pytest.raises(ValueError) as excinfo:\n            read_config(path)\n        assert \"Line 2\" in str(excinfo.value)\n    finally:\n        os.unlink(path)\n\n\ndef test_multiple_equals_in_value():\n    content = \"\"\"path=/usr/local/bin:/usr/bin\n    \"\"\"\n    path = write_temp_file(content)\n    try:\n        cfg = read_config(path)\n        assert cfg == {\"path\": \"/usr/local/bin:/usr/bin\"}\n    finally:\n        os.unlink(path)\n"
+ },
+ "final": {
+  "solution_code": "def read_config(path):\n    \"\"\"Read a simple key=value configuration file.\n\n    Parameters\n    ----------\n    path : str\n        Path to the configuration file.\n\n    Returns\n    -------\n    dict\n        Dictionary of configuration values.\n\n    Raises\n    ------\n    ValueError\n        If a non\u2011empty, non\u2011comment line does not contain exactly one ``=``.\n    \"\"\"\n    config = {}\n    with open(path, 'r', encoding='utf-8') as f:\n        for lineno, raw_line in enumerate(f, start=1):\n            line = raw_line.strip()\n            if not line or line.startswith('#'):\n                continue\n            if '=' not in line:\n                raise ValueError(f\"Line {lineno} is not a valid key=value pair\")\n            # Split only on the first '=' to allow '=' in values\n            key, value = line.split('=', 1)\n            key = key.strip()\n            value = value.strip()\n            config[key] = value\n    return config\n",
+  "test_code": "import os\nimport tempfile\nimport pytest\n\nfrom solution import read_config\n\ndef write_temp_file(contents):\n    tmp = tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8')\n    tmp.write(contents)\n    tmp.close()\n    return tmp.name\n\n\ndef test_basic_config():\n    content = \"\"\"# Sample config\n    host = localhost\n    port= 8080\n    debug = True\n    \"\"\"\n    path = write_temp_file(content)\n    try:\n        cfg = read_config(path)\n        assert cfg == {\"host\": \"localhost\", \"port\": \"8080\", \"debug\": \"True\"}\n    finally:\n        os.unlink(path)\n\n\ndef test_empty_and_comment_lines():\n    content = \"\"\"# comment\n\n    key1=value1\n\n    # another comment\n    key2 = value2\n    \"\"\"\n    path = write_temp_file(content)\n    try:\n        cfg = read_config(path)\n        assert cfg == {\"key1\": \"value1\", \"key2\": \"value2\"}\n    finally:\n        os.unlink(path)\n\n\ndef test_spaces_around_keys_and_values():\n    content = \"\"\"   key   =    value   \n    another=val\n    \"\"\"\n    path = write_temp_file(content)\n    try:\n        cfg = read_config(path)\n        assert cfg == {\"key\": \"value\", \"another\": \"val\"}\n    finally:\n        os.unlink(path)\n\n\ndef test_invalid_line_raises_error():\n    content = \"\"\"valid=ok\n    invalid_line_without_equal\n    \"\"\"\n    path = write_temp_file(content)\n    try:\n        with pytest.raises(ValueError) as excinfo:\n            read_config(path)\n        assert \"Line 2\" in str(excinfo.value)\n    finally:\n        os.unlink(path)\n\n\ndef test_multiple_equals_in_value():\n    content = \"\"\"path=/usr/local/bin:/usr/bin\n    \"\"\"\n    path = write_temp_file(content)\n    try:\n        cfg = read_config(path)\n        assert cfg == {\"path\": \"/usr/local/bin:/usr/bin\"}\n    finally:\n        os.unlink(path)\n"
+ },
+ "findings": [],
+ "tool_calls": [
+  {
+   "iteration": 1,
+   "tool": "run_tests",
+   "is_error": false,
+   "seconds": 0.61,
+   "arguments": {
+    "solution_code": "def read_config(path):\n    \"\"\"Read a simple key=value configuration file.\n\n    Parameters\n    ----------\n    path : s...",
+    "test_code": "import os\nimport tempfile\nimport pytest\n\nfrom solution import read_config\n\ndef write_temp_file(contents):\n    tmp = t..."
+   },
+   "result": "{\n  \"status\": \"passed\",\n  \"passed\": 5,\n  \"failed\": 0,\n  \"tests\": [\n    {\n      \"name\": \"test_basic_config\",\n      \"ou..."
+  },
+  {
+   "iteration": 1,
+   "tool": "run_static_analysis",
+   "is_error": false,
+   "seconds": 0.1,
+   "arguments": {
+    "solution_code": "def read_config(path):\n    \"\"\"Read a simple key=value configuration file.\n\n    Parameters\n    ----------\n    path : s...",
+    "test_code": "import os\nimport tempfile\nimport pytest\n\nfrom solution import read_config\n\ndef write_temp_file(contents):\n    tmp = t..."
+   },
+   "result": "{\n  \"status\": \"clean\",\n  \"blocking_count\": 0,\n  \"advisory_count\": 0,\n  \"issues\": []\n}"
+  },
+  {
+   "iteration": 1,
+   "tool": "review_code",
+   "is_error": false,
+   "seconds": 1.88,
+   "arguments": {
+    "task": "Our app reads its settings from a text file where each line looks like `name=value`. Write a function called\n`read_co...",
+    "solution_code": "def read_config(path):\n    \"\"\"Read a simple key=value configuration file.\n\n    Parameters\n    ----------\n    path : s...",
+    "test_code": "import os\nimport tempfile\nimport pytest\n\nfrom solution import read_config\n\ndef write_temp_file(contents):\n    tmp = t...",
+    "test_results": "{\"status\": \"passed\", \"passed\": 5, \"failed\": 0, \"tests\": [{\"name\": \"test_basic_config\", \"outcome\": \"passed\", \"message\"...",
+    "lint_results": "{\"status\": \"clean\", \"blocking_count\": 0, \"advisory_count\": 0, \"issues\": []}",
+    "ledger": "[]"
+   },
+   "result": "{\n  \"review\": {\n    \"summary\": \"The code and tests are fully correct, robust, adhere to all coding standards, and pas..."
+  }
+ ],
+ "usage": {
+  "generator": {
+   "prompt_tokens": 374,
+   "completion_tokens": 852,
+   "calls": 1,
+   "cached_calls": 0,
+   "model": "openai/gpt-oss-20b"
+  },
+  "reviewer": {
+   "prompt_tokens": 2027,
+   "completion_tokens": 35,
+   "calls": 1,
+   "cached_calls": 0,
+   "model": "gemini-3.5-flash-lite"
+  }
+ },
+ "final_unresolved_blocking": [],
+ "escalated_to_human": [],
+ "evaluation": {
+  "baseline": {
+   "all_passed": true,
+   "passed": 4,
+   "total": 4,
+   "failing": []
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 4,
+   "total": 4,
+   "failing": []
+  },
+  "baseline_lint_blocking": 0,
+  "final_lint_blocking": 0
+ }
+}

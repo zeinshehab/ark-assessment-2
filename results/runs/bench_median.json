@@ -1,0 +1,377 @@
+{
+ "task_id": "median",
+ "task": "Write a function called `median` that takes a list of numbers and gives back the middle value. When there is an even\nnumber of values, use the average of the two middle ones. An empty list should cause an error.\n",
+ "started": "2026-11-25 16:19:17",
+ "generator_model": "openai/gpt-oss-20b",
+ "reviewer_model": "gemini-3.5-flash-lite",
+ "inject_wrong_finding": false,
+ "iterations": [
+  {
+   "iteration": 1,
+   "diff": "",
+   "reverted": false,
+   "code": {
+    "solution_code": "# solution.py\n\"\"\"Module providing a median function.\n\nThe function accepts a list of numbers and returns the median value.\nIf the list is empty a ValueError is raised.\n\"\"\"\n\nfrom __future__ import annotations\nfrom typing import List, Sequence, Union\n\nNumber = Union[int, float]\n\n\ndef median(data: Sequence[Number]) -> float:\n    \"\"\"Return the median of *data*.\n\n    Parameters\n    ----------\n    data:\n        A sequence of numbers. The sequence is not modified.\n\n    Returns\n    -------\n    float\n        The median value. For an odd length list this is the middle element\n        after sorting. For an even length list it is the average of the two\n        middle elements.\n\n    Raises\n    ------\n    ValueError\n        If *data* is empty.\n    \"\"\"\n    n = len(data)\n    if n == 0:\n        raise ValueError(\"median requires at least one data point\")\n    # Work on a sorted copy to avoid mutating the original sequence\n    sorted_data = sorted(data)\n    mid = n // 2\n    if n % 2:  # odd\n        return float(sorted_data[mid])\n    else:  # even\n        return (float(sorted_data[mid - 1]) + float(sorted_data[mid])) / 2.0\n",
+    "test_code": "# test_solution.py\nimport pytest\nfrom solution import median\n\n# Normal cases\n@pytest.mark.parametrize(\n    \"data,expected\",\n    [\n        ([1, 3, 5], 3),\n        ([5, 3, 1], 3),\n        ([1, 2, 3, 4], 2.5),\n        ([4, 1, 3, 2], 2.5),\n        ([10], 10),\n        ([1.5, 2.5, 3.5], 2.5),\n        ([3.5, 2.5, 1.5], 2.5),\n        ([1, 2, 2, 3, 4], 2),\n        ([1, 2, 2, 3], 2.0),\n    ],\n)\ndef test_median_normal(data, expected):\n    assert median(data) == expected\n\n# Edge cases\n@pytest.mark.parametrize(\n    \"data,expected\",\n    [\n        ([0, 0, 0], 0),\n        ([-5, -1, -3], -3),\n        ([-2, -4, -6, -8], -5.0),\n    ],\n)\ndef test_median_edge_cases(data, expected):\n    assert median(data) == expected\n\n# Error case\ndef test_median_empty():\n    with pytest.raises(ValueError):\n        median([])\n"
+   },
+   "test_results": {
+    "status": "passed",
+    "passed": 13,
+    "failed": 0,
+    "tests": [
+     {
+      "name": "test_median_normal[data0-3]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_normal[data1-3]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_normal[data2-2.5]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_normal[data3-2.5]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_normal[data4-10]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_normal[data5-2.5]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_normal[data6-2.5]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_normal[data7-2]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_normal[data8-2.0]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_edge_cases[data0-0]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_edge_cases[data1--3]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_edge_cases[data2--5.0]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_empty",
+      "outcome": "passed",
+      "message": ""
+     }
+    ],
+    "output": ".............                                                            [100%]\n13 passed in 0.09s\n"
+   },
+   "lint_results": {
+    "status": "issues",
+    "blocking_count": 1,
+    "advisory_count": 0,
+    "issues": [
+     {
+      "code": "F401",
+      "message": "`typing.List` imported but unused",
+      "file": "solution.py",
+      "line": 9,
+      "blocking": true
+     }
+    ]
+   },
+   "review_summary": "The code and tests are well-written and fully correct. There is only one minor static analysis issue regarding an unused import in solution.py.",
+   "new_findings": [
+    "F1"
+   ],
+   "standard_sections": [
+    "CS-1",
+    "CS-9",
+    "CS-3",
+    "CS-6"
+   ],
+   "generator_decisions": [
+    {
+     "finding_id": "F1",
+     "decision": "accept",
+     "reason": "The unused import of List is removed to satisfy static analysis; the change does not affect functionality."
+    }
+   ]
+  },
+  {
+   "iteration": 2,
+   "diff": "--- a/solution.py\n+++ b/solution.py\n@@ -6,7 +6,7 @@\n \"\"\"\n \n from __future__ import annotations\n-from typing import List, Sequence, Union\n+from typing import Sequence, Union\n \n Number = Union[int, float]\n ",
+   "reverted": false,
+   "code": {
+    "solution_code": "# solution.py\n\"\"\"Module providing a median function.\n\nThe function accepts a list of numbers and returns the median value.\nIf the list is empty a ValueError is raised.\n\"\"\"\n\nfrom __future__ import annotations\nfrom typing import Sequence, Union\n\nNumber = Union[int, float]\n\n\ndef median(data: Sequence[Number]) -> float:\n    \"\"\"Return the median of *data*.\n\n    Parameters\n    ----------\n    data:\n        A sequence of numbers. The sequence is not modified.\n\n    Returns\n    -------\n    float\n        The median value. For an odd length list this is the middle element\n        after sorting. For an even length list it is the average of the two\n        middle elements.\n\n    Raises\n    ------\n    ValueError\n        If *data* is empty.\n    \"\"\"\n    n = len(data)\n    if n == 0:\n        raise ValueError(\"median requires at least one data point\")\n    # Work on a sorted copy to avoid mutating the original sequence\n    sorted_data = sorted(data)\n    mid = n // 2\n    if n % 2:  # odd\n        return float(sorted_data[mid])\n    else:  # even\n        return (float(sorted_data[mid - 1]) + float(sorted_data[mid])) / 2.0\n",
+    "test_code": "# test_solution.py\nimport pytest\nfrom solution import median\n\n# Normal cases\n@pytest.mark.parametrize(\n    \"data,expected\",\n    [\n        ([1, 3, 5], 3),\n        ([5, 3, 1], 3),\n        ([1, 2, 3, 4], 2.5),\n        ([4, 1, 3, 2], 2.5),\n        ([10], 10),\n        ([1.5, 2.5, 3.5], 2.5),\n        ([3.5, 2.5, 1.5], 2.5),\n        ([1, 2, 2, 3, 4], 2),\n        ([1, 2, 2, 3], 2.0),\n    ],\n)\ndef test_median_normal(data, expected):\n    assert median(data) == expected\n\n# Edge cases\n@pytest.mark.parametrize(\n    \"data,expected\",\n    [\n        ([0, 0, 0], 0),\n        ([-5, -1, -3], -3),\n        ([-2, -4, -6, -8], -5.0),\n    ],\n)\ndef test_median_edge_cases(data, expected):\n    assert median(data) == expected\n\n# Error case\ndef test_median_empty():\n    with pytest.raises(ValueError):\n        median([])\n"
+   },
+   "test_results": {
+    "status": "passed",
+    "passed": 13,
+    "failed": 0,
+    "tests": [
+     {
+      "name": "test_median_normal[data0-3]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_normal[data1-3]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_normal[data2-2.5]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_normal[data3-2.5]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_normal[data4-10]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_normal[data5-2.5]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_normal[data6-2.5]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_normal[data7-2]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_normal[data8-2.0]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_edge_cases[data0-0]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_edge_cases[data1--3]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_edge_cases[data2--5.0]",
+      "outcome": "passed",
+      "message": ""
+     },
+     {
+      "name": "test_median_empty",
+      "outcome": "passed",
+      "message": ""
+     }
+    ],
+    "output": ".............                                                            [100%]\n13 passed in 0.09s\n"
+   },
+   "lint_results": {
+    "status": "clean",
+    "blocking_count": 0,
+    "advisory_count": 0,
+    "issues": []
+   },
+   "review_summary": "The code and tests are fully correct, clean, pass all static analysis checks, and correctly implement the required median function with proper edge case handling and error raising.",
+   "new_findings": [],
+   "standard_sections": [
+    "CS-1",
+    "CS-9",
+    "CS-6",
+    "CS-8"
+   ]
+  }
+ ],
+ "status": "converged",
+ "error": null,
+ "baseline": {
+  "solution_code": "# solution.py\n\"\"\"Module providing a median function.\n\nThe function accepts a list of numbers and returns the median value.\nIf the list is empty a ValueError is raised.\n\"\"\"\n\nfrom __future__ import annotations\nfrom typing import List, Sequence, Union\n\nNumber = Union[int, float]\n\n\ndef median(data: Sequence[Number]) -> float:\n    \"\"\"Return the median of *data*.\n\n    Parameters\n    ----------\n    data:\n        A sequence of numbers. The sequence is not modified.\n\n    Returns\n    -------\n    float\n        The median value. For an odd length list this is the middle element\n        after sorting. For an even length list it is the average of the two\n        middle elements.\n\n    Raises\n    ------\n    ValueError\n        If *data* is empty.\n    \"\"\"\n    n = len(data)\n    if n == 0:\n        raise ValueError(\"median requires at least one data point\")\n    # Work on a sorted copy to avoid mutating the original sequence\n    sorted_data = sorted(data)\n    mid = n // 2\n    if n % 2:  # odd\n        return float(sorted_data[mid])\n    else:  # even\n        return (float(sorted_data[mid - 1]) + float(sorted_data[mid])) / 2.0\n",
+  "test_code": "# test_solution.py\nimport pytest\nfrom solution import median\n\n# Normal cases\n@pytest.mark.parametrize(\n    \"data,expected\",\n    [\n        ([1, 3, 5], 3),\n        ([5, 3, 1], 3),\n        ([1, 2, 3, 4], 2.5),\n        ([4, 1, 3, 2], 2.5),\n        ([10], 10),\n        ([1.5, 2.5, 3.5], 2.5),\n        ([3.5, 2.5, 1.5], 2.5),\n        ([1, 2, 2, 3, 4], 2),\n        ([1, 2, 2, 3], 2.0),\n    ],\n)\ndef test_median_normal(data, expected):\n    assert median(data) == expected\n\n# Edge cases\n@pytest.mark.parametrize(\n    \"data,expected\",\n    [\n        ([0, 0, 0], 0),\n        ([-5, -1, -3], -3),\n        ([-2, -4, -6, -8], -5.0),\n    ],\n)\ndef test_median_edge_cases(data, expected):\n    assert median(data) == expected\n\n# Error case\ndef test_median_empty():\n    with pytest.raises(ValueError):\n        median([])\n"
+ },
+ "final": {
+  "solution_code": "# solution.py\n\"\"\"Module providing a median function.\n\nThe function accepts a list of numbers and returns the median value.\nIf the list is empty a ValueError is raised.\n\"\"\"\n\nfrom __future__ import annotations\nfrom typing import Sequence, Union\n\nNumber = Union[int, float]\n\n\ndef median(data: Sequence[Number]) -> float:\n    \"\"\"Return the median of *data*.\n\n    Parameters\n    ----------\n    data:\n        A sequence of numbers. The sequence is not modified.\n\n    Returns\n    -------\n    float\n        The median value. For an odd length list this is the middle element\n        after sorting. For an even length list it is the average of the two\n        middle elements.\n\n    Raises\n    ------\n    ValueError\n        If *data* is empty.\n    \"\"\"\n    n = len(data)\n    if n == 0:\n        raise ValueError(\"median requires at least one data point\")\n    # Work on a sorted copy to avoid mutating the original sequence\n    sorted_data = sorted(data)\n    mid = n // 2\n    if n % 2:  # odd\n        return float(sorted_data[mid])\n    else:  # even\n        return (float(sorted_data[mid - 1]) + float(sorted_data[mid])) / 2.0\n",
+  "test_code": "# test_solution.py\nimport pytest\nfrom solution import median\n\n# Normal cases\n@pytest.mark.parametrize(\n    \"data,expected\",\n    [\n        ([1, 3, 5], 3),\n        ([5, 3, 1], 3),\n        ([1, 2, 3, 4], 2.5),\n        ([4, 1, 3, 2], 2.5),\n        ([10], 10),\n        ([1.5, 2.5, 3.5], 2.5),\n        ([3.5, 2.5, 1.5], 2.5),\n        ([1, 2, 2, 3, 4], 2),\n        ([1, 2, 2, 3], 2.0),\n    ],\n)\ndef test_median_normal(data, expected):\n    assert median(data) == expected\n\n# Edge cases\n@pytest.mark.parametrize(\n    \"data,expected\",\n    [\n        ([0, 0, 0], 0),\n        ([-5, -1, -3], -3),\n        ([-2, -4, -6, -8], -5.0),\n    ],\n)\ndef test_median_edge_cases(data, expected):\n    assert median(data) == expected\n\n# Error case\ndef test_median_empty():\n    with pytest.raises(ValueError):\n        median([])\n"
+ },
+ "findings": [
+  {
+   "severity": "minor",
+   "category": "style",
+   "file": "solution.py",
+   "line": 9,
+   "title": "Unused import List",
+   "rationale": "typing.List is imported but never used in the module, triggering static analysis warnings.",
+   "suggested_fix": "Remove List from the import statement from typing import List, Sequence, Union.",
+   "evidence": "F401 `typing.List` imported but unused",
+   "standard_ref": "CS-1",
+   "id": "F1",
+   "iteration": 1,
+   "blocking": false,
+   "status": "fixed",
+   "history": [
+    {
+     "iteration": 1,
+     "actor": "reviewer",
+     "status": "open",
+     "reason": ""
+    },
+    {
+     "iteration": 1,
+     "actor": "generator",
+     "status": "accepted",
+     "reason": "The unused import of List is removed to satisfy static analysis; the change does not affect functionality."
+    },
+    {
+     "iteration": 2,
+     "actor": "orchestrator",
+     "status": "fixed",
+     "reason": "revision kept (no regression)"
+    }
+   ],
+   "injected": false
+  }
+ ],
+ "tool_calls": [
+  {
+   "iteration": 1,
+   "tool": "run_tests",
+   "is_error": false,
+   "seconds": 0.61,
+   "arguments": {
+    "solution_code": "# solution.py\n\"\"\"Module providing a median function.\n\nThe function accepts a list of numbers and returns the median v...",
+    "test_code": "# test_solution.py\nimport pytest\nfrom solution import median\n\n# Normal cases\n@pytest.mark.parametrize(\n    \"data,expe..."
+   },
+   "result": "{\n  \"status\": \"passed\",\n  \"passed\": 13,\n  \"failed\": 0,\n  \"tests\": [\n    {\n      \"name\": \"test_median_normal[data0-3]\"..."
+  },
+  {
+   "iteration": 1,
+   "tool": "run_static_analysis",
+   "is_error": false,
+   "seconds": 0.1,
+   "arguments": {
+    "solution_code": "# solution.py\n\"\"\"Module providing a median function.\n\nThe function accepts a list of numbers and returns the median v...",
+    "test_code": "# test_solution.py\nimport pytest\nfrom solution import median\n\n# Normal cases\n@pytest.mark.parametrize(\n    \"data,expe..."
+   },
+   "result": "{\n  \"status\": \"issues\",\n  \"blocking_count\": 1,\n  \"advisory_count\": 0,\n  \"issues\": [\n    {\n      \"code\": \"F401\",\n     ..."
+  },
+  {
+   "iteration": 1,
+   "tool": "review_code",
+   "is_error": false,
+   "seconds": 2.25,
+   "arguments": {
+    "task": "Write a function called `median` that takes a list of numbers and gives back the middle value. When there is an even\n...",
+    "solution_code": "# solution.py\n\"\"\"Module providing a median function.\n\nThe function accepts a list of numbers and returns the median v...",
+    "test_code": "# test_solution.py\nimport pytest\nfrom solution import median\n\n# Normal cases\n@pytest.mark.parametrize(\n    \"data,expe...",
+    "test_results": "{\"status\": \"passed\", \"passed\": 13, \"failed\": 0, \"tests\": [{\"name\": \"test_median_normal[data0-3]\", \"outcome\": \"passed\"...",
+    "lint_results": "{\"status\": \"issues\", \"blocking_count\": 1, \"advisory_count\": 0, \"issues\": [{\"code\": \"F401\", \"message\": \"`typing.List` ...",
+    "ledger": "[]"
+   },
+   "result": "{\n  \"review\": {\n    \"summary\": \"The code and tests are well-written and fully correct. There is only one minor static..."
+  },
+  {
+   "iteration": 2,
+   "tool": "run_tests",
+   "is_error": false,
+   "seconds": 0.63,
+   "arguments": {
+    "solution_code": "# solution.py\n\"\"\"Module providing a median function.\n\nThe function accepts a list of numbers and returns the median v...",
+    "test_code": "# test_solution.py\nimport pytest\nfrom solution import median\n\n# Normal cases\n@pytest.mark.parametrize(\n    \"data,expe..."
+   },
+   "result": "{\n  \"status\": \"passed\",\n  \"passed\": 13,\n  \"failed\": 0,\n  \"tests\": [\n    {\n      \"name\": \"test_median_normal[data0-3]\"..."
+  },
+  {
+   "iteration": 2,
+   "tool": "run_static_analysis",
+   "is_error": false,
+   "seconds": 0.11,
+   "arguments": {
+    "solution_code": "# solution.py\n\"\"\"Module providing a median function.\n\nThe function accepts a list of numbers and returns the median v...",
+    "test_code": "# test_solution.py\nimport pytest\nfrom solution import median\n\n# Normal cases\n@pytest.mark.parametrize(\n    \"data,expe..."
+   },
+   "result": "{\n  \"status\": \"clean\",\n  \"blocking_count\": 0,\n  \"advisory_count\": 0,\n  \"issues\": []\n}"
+  },
+  {
+   "iteration": 2,
+   "tool": "review_code",
+   "is_error": false,
+   "seconds": 7.73,
+   "arguments": {
+    "task": "Write a function called `median` that takes a list of numbers and gives back the middle value. When there is an even\n...",
+    "solution_code": "# solution.py\n\"\"\"Module providing a median function.\n\nThe function accepts a list of numbers and returns the median v...",
+    "test_code": "# test_solution.py\nimport pytest\nfrom solution import median\n\n# Normal cases\n@pytest.mark.parametrize(\n    \"data,expe...",
+    "test_results": "{\"status\": \"passed\", \"passed\": 13, \"failed\": 0, \"tests\": [{\"name\": \"test_median_normal[data0-3]\", \"outcome\": \"passed\"...",
+    "lint_results": "{\"status\": \"clean\", \"blocking_count\": 0, \"advisory_count\": 0, \"issues\": []}",
+    "ledger": "[{\"id\": \"F1\", \"round\": 1, \"severity\": \"minor\", \"file\": \"solution.py\", \"line\": 9, \"title\": \"Unused import List\", \"stat..."
+   },
+   "result": "{\n  \"review\": {\n    \"summary\": \"The code and tests are fully correct, clean, pass all static analysis checks, and cor..."
+  }
+ ],
+ "usage": {
+  "generator": {
+   "prompt_tokens": 1838,
+   "completion_tokens": 1501,
+   "calls": 2,
+   "cached_calls": 0,
+   "model": "openai/gpt-oss-20b"
+  },
+  "reviewer": {
+   "prompt_tokens": 3644,
+   "completion_tokens": 234,
+   "calls": 2,
+   "cached_calls": 0,
+   "model": "gemini-3.5-flash-lite"
+  }
+ },
+ "final_unresolved_blocking": [],
+ "escalated_to_human": [],
+ "evaluation": {
+  "baseline": {
+   "all_passed": true,
+   "passed": 5,
+   "total": 5,
+   "failing": []
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 5,
+   "total": 5,
+   "failing": []
+  },
+  "baseline_lint_blocking": 1,
+  "final_lint_blocking": 0
+ }
+}

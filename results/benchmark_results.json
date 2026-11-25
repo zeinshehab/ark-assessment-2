@@ -1,0 +1,296 @@
+[
+ {
+  "task": "paginate",
+  "trap": "off-by-one (1-indexed pages)",
+  "status": "converged",
+  "rounds": 2,
+  "baseline": {
+   "all_passed": true,
+   "passed": 7,
+   "total": 7,
+   "failing": []
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 7,
+   "total": 7,
+   "failing": []
+  },
+  "outcome": "draft passed hidden tests",
+  "findings": 1,
+  "blocking": 1,
+  "on_solution": 0,
+  "declined_or_disputed": 0,
+  "reverted": 0,
+  "late": 0,
+  "gen_tokens": 4124,
+  "rev_tokens": 4842,
+  "gen_calls": 2,
+  "rev_calls": 2
+ },
+ {
+  "task": "moving_average",
+  "trap": "off-by-one (last window dropped)",
+  "status": "converged",
+  "rounds": 1,
+  "baseline": {
+   "all_passed": true,
+   "passed": 5,
+   "total": 5,
+   "failing": []
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 5,
+   "total": 5,
+   "failing": []
+  },
+  "outcome": "draft passed hidden tests",
+  "findings": 0,
+  "blocking": 0,
+  "on_solution": 0,
+  "declined_or_disputed": 0,
+  "reverted": 0,
+  "late": 0,
+  "gen_tokens": 1078,
+  "rev_tokens": 1876,
+  "gen_calls": 1,
+  "rev_calls": 1
+ },
+ {
+  "task": "median",
+  "trap": "edge case: even length / input mutation",
+  "status": "converged",
+  "rounds": 2,
+  "baseline": {
+   "all_passed": true,
+   "passed": 5,
+   "total": 5,
+   "failing": []
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 5,
+   "total": 5,
+   "failing": []
+  },
+  "outcome": "draft passed hidden tests",
+  "findings": 1,
+  "blocking": 0,
+  "on_solution": 1,
+  "declined_or_disputed": 0,
+  "reverted": 0,
+  "late": 0,
+  "gen_tokens": 3339,
+  "rev_tokens": 3878,
+  "gen_calls": 2,
+  "rev_calls": 2
+ },
+ {
+  "task": "find_user",
+  "trap": "SQL injection via string formatting",
+  "status": "converged",
+  "rounds": 1,
+  "baseline": {
+   "all_passed": true,
+   "passed": 6,
+   "total": 6,
+   "failing": []
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 6,
+   "total": 6,
+   "failing": []
+  },
+  "outcome": "draft passed hidden tests",
+  "findings": 0,
+  "blocking": 0,
+  "on_solution": 0,
+  "declined_or_disputed": 0,
+  "reverted": 0,
+  "late": 0,
+  "gen_tokens": 1026,
+  "rev_tokens": 1767,
+  "gen_calls": 1,
+  "rev_calls": 1
+ },
+ {
+  "task": "read_config",
+  "trap": "resource leak on error path",
+  "status": "converged",
+  "rounds": 1,
+  "baseline": {
+   "all_passed": true,
+   "passed": 4,
+   "total": 4,
+   "failing": []
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 4,
+   "total": 4,
+   "failing": []
+  },
+  "outcome": "draft passed hidden tests",
+  "findings": 0,
+  "blocking": 0,
+  "on_solution": 0,
+  "declined_or_disputed": 0,
+  "reverted": 0,
+  "late": 0,
+  "gen_tokens": 1226,
+  "rev_tokens": 2062,
+  "gen_calls": 1,
+  "rev_calls": 1
+ },
+ {
+  "task": "safe_join",
+  "trap": "path traversal / prefix check",
+  "status": "converged",
+  "rounds": 3,
+  "baseline": {
+   "all_passed": true,
+   "passed": 5,
+   "total": 5,
+   "failing": []
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 5,
+   "total": 5,
+   "failing": []
+  },
+  "outcome": "draft passed hidden tests",
+  "findings": 3,
+  "blocking": 3,
+  "on_solution": 1,
+  "declined_or_disputed": 0,
+  "reverted": 0,
+  "late": 0,
+  "gen_tokens": 7200,
+  "rev_tokens": 8135,
+  "gen_calls": 3,
+  "rev_calls": 3
+ },
+ {
+  "task": "split_bill",
+  "trap": "float rounding loses cents",
+  "status": "converged",
+  "rounds": 2,
+  "baseline": {
+   "all_passed": true,
+   "passed": 8,
+   "total": 8,
+   "failing": []
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 8,
+   "total": 8,
+   "failing": []
+  },
+  "outcome": "draft passed hidden tests",
+  "findings": 3,
+  "blocking": 2,
+  "on_solution": 1,
+  "declined_or_disputed": 0,
+  "reverted": 0,
+  "late": 0,
+  "gen_tokens": 4801,
+  "rev_tokens": 6039,
+  "gen_calls": 2,
+  "rev_calls": 2
+ },
+ {
+  "task": "parse_duration",
+  "trap": "lenient parsing accepts malformed input",
+  "status": "converged",
+  "rounds": 2,
+  "baseline": {
+   "all_passed": false,
+   "passed": 0,
+   "total": 16,
+   "failing": [
+    "test_hidden"
+   ]
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 16,
+   "total": 16,
+   "failing": []
+  },
+  "outcome": "defect fixed",
+  "findings": 1,
+  "blocking": 1,
+  "on_solution": 1,
+  "declined_or_disputed": 0,
+  "reverted": 0,
+  "late": 0,
+  "gen_tokens": 7618,
+  "rev_tokens": 7999,
+  "gen_calls": 2,
+  "rev_calls": 2
+ },
+ {
+  "task": "business_days",
+  "trap": "off-by-one (inclusive end date)",
+  "status": "converged",
+  "rounds": 2,
+  "baseline": {
+   "all_passed": true,
+   "passed": 8,
+   "total": 8,
+   "failing": []
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 8,
+   "total": 8,
+   "failing": []
+  },
+  "outcome": "draft passed hidden tests",
+  "findings": 3,
+  "blocking": 3,
+  "on_solution": 0,
+  "declined_or_disputed": 0,
+  "reverted": 0,
+  "late": 0,
+  "gen_tokens": 5830,
+  "rev_tokens": 6987,
+  "gen_calls": 2,
+  "rev_calls": 2
+ },
+ {
+  "task": "render_table",
+  "trap": "HTML injection (no escaping)",
+  "status": "converged",
+  "rounds": 3,
+  "baseline": {
+   "all_passed": false,
+   "passed": 3,
+   "total": 4,
+   "failing": [
+    "test_values_are_escaped"
+   ]
+  },
+  "final": {
+   "all_passed": true,
+   "passed": 4,
+   "total": 4,
+   "failing": []
+  },
+  "outcome": "defect fixed",
+  "findings": 4,
+  "blocking": 3,
+  "on_solution": 2,
+  "declined_or_disputed": 1,
+  "reverted": 0,
+  "late": 0,
+  "gen_tokens": 7835,
+  "rev_tokens": 8169,
+  "gen_calls": 3,
+  "rev_calls": 3
+ }
+]
