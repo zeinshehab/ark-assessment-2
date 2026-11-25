@@ -11,9 +11,8 @@ hidden trap tests measures whether the loop actually improves the code.
 
 ## Setup
 
-```powershell
-python -m venv $HOME\.venvs\ai
-& $HOME\.venvs\ai\Scripts\python -m pip install -r requirements.txt
+```
+pip install -r requirements.txt
 ```
 Create `.env` with `GROQ_KEY=...` and `GEMINI_KEY=...`.
 
@@ -102,5 +101,3 @@ where orchestration made things worse.
   reviewer-only ablation. The results are suggestive, not statistically significant.
 - Single-file Python functions only. The reviewer is a "lite" model because of free-tier quotas.
 - Code under review could attempt prompt injection against the reviewer. Mitigations are only partial.
-
-`NOTES.md` explains every decision in depth.
