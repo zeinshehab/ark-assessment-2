@@ -24,14 +24,6 @@ Baseline = the generator's first draft (no review). Orchestrated = the final cod
 
 ## Per task
 
-How to read this table:
-- **Rounds**: review rounds. 1 = the first draft was accepted as is.
-- **Hidden: baseline → final**: hidden tests passed by the first draft → by the final code.
-- **Outcome**: compares *only the solution's behaviour* with the hidden tests. "Draft passed hidden tests" means extra rounds, if any, were spent on other problems (usually the generator's own tests, or lint).
-- **Findings (blocking)**: all review findings (critical/major ones block convergence until resolved).
-- **On solution / on tests**: whether findings targeted solution.py or the generator's test_solution.py.
-- **Withdrawn/disputed, Reverted, Late**: how often each disagreement mechanism fired (see NOTES.md §5).
-
 | Task | Trap | Status | Rounds | Hidden: baseline → final | Outcome | Findings (blocking) | On solution / on tests | Withdrawn/disputed | Reverted | Late | Gen tokens (calls) | Rev tokens (calls) |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | paginate | off-by-one (1-indexed pages) | converged | 2 | 7/7 → 7/7 | draft passed hidden tests | 1 (1) | 0 / 1 | 0 | 0 | 0 | 4,124 (2) | 4,842 (2) |

@@ -3,7 +3,7 @@ or solution code, so this audit hook is active while untrusted code runs.
 
 Python's audit hooks (PEP 578) fire on sensitive operations; raising from the hook blocks them.
 Hooks cannot be removed once added. This is a guard rail, not a security boundary: native code
-can bypass it. See NOTES.md, Sandbox section.
+can bypass it. See README, Known limitations.
 
 Policy:
   * no network, no subprocesses, no native libraries, no registry

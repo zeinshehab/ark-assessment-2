@@ -173,7 +173,7 @@ def build_report(tasks: list[dict]) -> str:
         "means extra rounds, if any, were spent on other problems (usually the generator's own tests, or lint)."),
         "- **Findings (blocking)**: all review findings (critical/major ones block convergence until resolved).",
         "- **On solution / on tests**: whether findings targeted solution.py or the generator's test_solution.py.",
-        "- **Withdrawn/disputed, Reverted, Late**: how often each disagreement mechanism fired (see NOTES.md §5).",
+        "- **Withdrawn/disputed, Reverted, Late**: how often each disagreement mechanism fired (see README, Key design decisions).",
         "",
         "| Task | Trap | Status | Rounds | Hidden: baseline → final | Outcome | Findings (blocking) | On solution / on tests | Withdrawn/disputed | Reverted | Late | Gen tokens (calls) | Rev tokens (calls) |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
