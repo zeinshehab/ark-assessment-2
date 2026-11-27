@@ -6,3 +6,8 @@ __pycache__/
 .ruff_cache/
 *.pdf
 docs/
+.data/
+.venv/
+deploy/.env.prod
+deploy/secrets/*
+!deploy/secrets/README.md
