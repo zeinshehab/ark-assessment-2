@@ -73,7 +73,7 @@ def review(task: str, solution_code: str, test_code: str, test_results: dict, li
     query = " ".join([solution_code, test_code, json.dumps(lint_results), json.dumps(test_results)])
     sections = retrieval.retrieve(query)
     prompt = build_prompt(task, solution_code, test_code, test_results, lint_results, ledger, sections)
-    usage = {"model": llm.config.REVIEWER_MODEL, "prompt_tokens": 0, "completion_tokens": 0, "calls": 0,
+    usage = {"model": llm.config.get_settings().reviewer_model, "prompt_tokens": 0, "completion_tokens": 0, "calls": 0,
              "cached_calls": 0}
 
     errors: list[str] = []
