@@ -85,6 +85,9 @@ class Settings(BaseSettings):
     cf_access_team_domain: str = ""   # e.g. myteam.cloudflareaccess.com
     cf_access_aud: str = ""           # the Access application's audience tag
 
+    # Who users should contact when a run fails (shown in the UI's error panel). Required in production.
+    operator_contact: str = ""
+
     @field_validator("groq_key", "gemini_key")
     @classmethod
     def _not_empty(cls, value: SecretStr) -> SecretStr:
@@ -101,6 +104,8 @@ class Settings(BaseSettings):
             self.allow_demo_injection = not production
         if production and not (self.cf_access_team_domain and self.cf_access_aud):
             raise ValueError("CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD are required in production")
+        if production and not self.operator_contact.strip():
+            raise ValueError("OPERATOR_CONTACT is required in production (who users contact when a run fails)")
         return self
 
     @property
