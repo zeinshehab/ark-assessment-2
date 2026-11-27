@@ -4,8 +4,13 @@
 #   ./deploy/deploy.sh 3f2a9c1        deploy that build
 #   ./deploy/rollback.sh              go back to the previous good build
 #
-# What "good" means: /readyz answers 200 *and* reports the version we just deployed, within READY_TIMEOUT seconds.
-# /readyz checks the configuration loaded, the data volume is writable, and the MCP server starts (no LLM calls).
+# Steps:
+#   1. pull the new image (if that fails, nothing has changed: stop)
+#   2. replace the app container with the new version
+#   3. wait until /readyz answers 200 *and* reports the new version (config loaded, data volume writable, MCP server
+#      starts; no LLM calls). Give up early if the container is crash-looping.
+#   4. ready: start/refresh the rest of the stack (the Cloudflare Tunnel) and record the version
+#      not ready: print the app's last log lines and put the previous version back the same way
 #
 # Exit codes: 0 deployed | 1 failed but rolled back to the previous version | 2 failed and could not recover
 #
@@ -27,42 +32,58 @@ CURRENT="$(cat .deployed 2>/dev/null || true)"   # the version serving right now
 
 log() { echo "[deploy $(date -u +%H:%M:%SZ)] $*"; }
 
-start() {  # start (or replace) the stack on a given tag
-  if [ "${SKIP_PULL:-0}" != 1 ]; then APP_TAG="$1" "${COMPOSE[@]}" pull --quiet; fi
-  APP_TAG="$1" "${COMPOSE[@]}" up -d --remove-orphans
+start_app() {  # replace only the app container; --no-deps: don't wait on anything else
+  APP_TAG="$1" "${COMPOSE[@]}" up -d --no-deps app
 }
 
-ready() {  # wait until /readyz is 200 and reports this version
-  local deadline=$((SECONDS + READY_TIMEOUT)) body
+ready() {  # wait until /readyz is 200 and reports this version; fail early on a crash loop
+  local deadline=$((SECONDS + READY_TIMEOUT)) body container restarts
+  container="$(APP_TAG="$1" "${COMPOSE[@]}" ps -q app)"
   while [ $SECONDS -lt $deadline ]; do
     if body="$(curl -fsS --max-time 5 "$READY_URL" 2>/dev/null)" && [[ "$body" == *"\"version\":\"$1\""* ]]; then
       log "ready: $body"
       return 0
     fi
+    restarts="$(docker inspect -f '{{.RestartCount}}' "$container" 2>/dev/null || echo 0)"
+    if [ "${restarts:-0}" -ge 2 ]; then
+      log "the app container has restarted $restarts times: it is crash-looping"
+      return 1
+    fi
     sleep 3
   done
+  log "no ready answer from $1 within ${READY_TIMEOUT}s"
   return 1
 }
 
+finish() {  # the app is ready: bring the rest of the stack (tunnel) up to date
+  APP_TAG="$1" "${COMPOSE[@]}" up -d --remove-orphans
+}
+
 log "deploying $TAG (currently serving: ${CURRENT:-nothing})"
-start "$TAG"
+if [ "${SKIP_PULL:-0}" != 1 ]; then  # a missing image changes nothing: stop here, the current version keeps serving
+  APP_TAG="$TAG" "${COMPOSE[@]}" pull --quiet || { log "could not pull $TAG; nothing changed"; exit 2; }
+fi
+
+start_app "$TAG"
 if ready "$TAG"; then
+  finish "$TAG"
   [ -n "$CURRENT" ] && [ "$CURRENT" != "$TAG" ] && echo "$CURRENT" > .deployed.previous
   echo "$TAG" > .deployed
   log "OK: $TAG is serving"
   exit 0
 fi
 
-log "FAILED: $TAG did not become ready within ${READY_TIMEOUT}s. Last log lines from the app:"
-APP_TAG="$TAG" "${COMPOSE[@]}" logs --no-log-prefix --tail 20 app 2>&1 | uniq || true   # a crash loop repeats the same line
+log "FAILED: $TAG is not ready. Last log lines from the app:"
+APP_TAG="$TAG" "${COMPOSE[@]}" logs --no-log-prefix --tail 20 app 2>&1 | uniq || true   # a crash loop repeats lines
 if [ -z "$CURRENT" ] || [ "$CURRENT" = "$TAG" ]; then
   log "nothing to roll back to; the app is DOWN. Fix the configuration and deploy again."
   exit 2
 fi
 
 log "rolling back to $CURRENT"
-start "$CURRENT"
+start_app "$CURRENT"
 if ready "$CURRENT"; then
+  finish "$CURRENT"
   log "ROLLED BACK: $CURRENT is serving again. $TAG was not deployed."
   exit 1
 fi

@@ -2,6 +2,7 @@
 #
 #   checks   lint (ruff) -> tests (pytest, fakes only: no API keys, no quota) -> dependency audit (pip-audit)
 #   image    docker build -> smoke test of the container as production runs it (scripts/smoke.sh)
+#            -> deploy test: deploy.sh deploys a good release, then rolls back a broken one (scripts/test_deploy.sh)
 #   publish  (main and v* tags) multi-arch image (amd64 + arm64) to GHCR, tagged with the commit SHA
 #
 # CI never sees a real API key: tests use dummy keys and fake providers, the smoke test uses dummy secrets.
@@ -65,6 +66,8 @@ jobs:
           cache-to: type=gha,mode=max
       - name: Smoke test the container (production mode, dummy secrets)
         run: bash scripts/smoke.sh crosscheck:ci
+      - name: Deploy test (deploy.sh with the tunnel profile; a broken release must roll back)
+        run: bash scripts/test_deploy.sh crosscheck:ci
 
   publish:
     if: github.event_name == 'push'   # main or a v* tag; never pull requests

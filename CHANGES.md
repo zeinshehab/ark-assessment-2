@@ -324,6 +324,30 @@ Each decision lists the alternatives considered and who made the call ("user" or
 - **Files:** `reviewer_loop/config.py`, `api/main.py`, `api/static/app.js`, `.env.example`, `deploy/.env.prod.example`, `scripts/smoke.sh`.
 - **Test:** production without `OPERATOR_CONTACT` refuses to load its configuration.
 
+### Incident: the first real drift rehearsal left production down (fixed)
+**What happened.**
+- On the MacBook, `./deploy.sh e0bb0c4` was run with a `.env.prod` that lacked `OPERATOR_CONTACT`.
+- The new app crash-looped as intended, but **no rollback happened** and crosscheck.zeinshehab.com went down (Cloudflare 502).
+- Production was restored by deploying the previous version by hand (`./deploy.sh 3a92541`).
+
+**Cause.**
+- With the tunnel profile, Compose starts `cloudflared` only after the app is healthy. So when the new app never became healthy, `docker compose up` **itself returned an error**.
+- `deploy.sh` runs with `set -e`, so it stopped at that error, *before* its readiness check and rollback.
+- The script had been tested locally only with `TUNNEL=0` (no tunnel token on the development PC), where that dependency doesn't exist. **The test environment didn't match production.**
+
+**Fix (`deploy/deploy.sh`).**
+- Pull first: a missing image now stops the deploy with nothing changed.
+- Replace only the app container (`up -d --no-deps app`).
+- Wait for readiness, but **detect a crash loop early** (two or more container restarts) instead of waiting out the timeout.
+- Start the tunnel only once the app is ready.
+- Result: a broken release is now detected and rolled back in **about 15 s** (the first fix attempt took about 3.5 minutes, mostly Docker health-check retries).
+
+**Prevention (`scripts/test_deploy.sh`, new CI step).**
+- CI now runs the real `deploy.sh` **with the tunnel profile**, in a temporary copy of `deploy/` with dummy config: a good release must deploy, then a broken release must roll back automatically and the good one must still be serving.
+- Run against the old `deploy.sh`, this test fails with the same error seen in production, so it would have caught the bug.
+
+**Lesson:** test operational scripts in the same configuration production uses. A deploy script with an untested failure path is worse than none, because it gives false confidence.
+
 ## 4. Removed or deliberately not built
 
 _Filled in as the work progresses._
