@@ -281,6 +281,37 @@ Each decision lists the alternatives considered and who made the call ("user" or
 
 **Small fix:** uvicorn adds a colour-coded duplicate of each message (`color_message`) to its log records; it is now dropped from our JSON logs.
 
+### Step 8: CI/CD
+**`.github/workflows/ci.yml`.** Round 2 had no CI.
+
+| Job | Runs on | What |
+|---|---|---|
+| `checks` | every push and PR | `uv sync --frozen` → `ruff check` (incl. bandit security rules) → `pytest` (fakes only: no keys, no quota) → `pip-audit` on the exact locked runtime dependencies (hash-checked) |
+| `image` | after `checks` | `docker build` → `scripts/smoke.sh`: runs the container as production does (read-only, no capabilities, secret files). It must become healthy and ready, refuse the API without a login, keep keys out of its logs, and **refuse to start with an empty key** (exit 2, naming the setting) |
+| `publish` | pushes to `main` and `v*` tags only | multi-arch image (amd64 + arm64 via QEMU) pushed to GitHub's container registry, tagged with the **short commit SHA** (+ `main` / version), with provenance and an SBOM. The run summary prints the deploy command |
+
+- **Supply chain.** Every action is pinned to a full commit SHA (a tag like `v4` can be moved by whoever controls that repository). The workflow's default permission is read-only; only `publish` gets `packages: write`, using the run's short-lived `GITHUB_TOKEN`. **CI never sees a real API key.**
+- **`.github/dependabot.yml`** opens weekly update PRs for Python packages, the digest-pinned base images, cloudflared and the actions. Each goes through the full pipeline.
+- **`.gitattributes`** keeps shell scripts and the Dockerfile on LF line endings, so a Windows checkout can't break them.
+- *Trade-off:* the arm64 image is built under QEMU emulation on an amd64 runner. That is slower than native arm64 runners plus a manifest merge, but it is one job instead of three. Our dependencies are all pre-built wheels, so emulation costs little.
+
+### Step 9: deployment and rollback
+**`deploy/deploy.sh <sha>`** (D3, pull-based):
+1. records which version is serving;
+2. pulls the CI-built image for `<sha>`;
+3. `docker compose up -d`;
+4. waits up to 90 s for `/readyz` to answer 200 **and report that exact version**, so an old container still answering can't count as success.
+- On success it records the new version (and the previous one, for `rollback.sh`).
+- On failure it prints the app's last log lines (a crash loop's repeated line collapsed), **redeploys the previous version**, waits for it to be ready, and exits 1: "failed, rolled back".
+- Exit 2 means it could not recover (nothing to roll back to, or the rollback also failed).
+
+**`deploy/rollback.sh`** redeploys the previous good version on demand, for a release that passed readiness but misbehaves in use.
+
+**Verified locally with two images.**
+- A good build deployed, and became ready in 5 s.
+- Then a build whose configuration is invalid on this host was deployed. It crash-looped with `GROQ_DAILY_TOKEN_BUDGET: Input should be greater than 0`; deploy.sh printed that line, rolled back, and the good version was serving again 6 s later.
+- **Finding:** settings in `.env.prod` override the image's own environment variables. A realistic bad deployment is therefore a release that *needs* something the host doesn't provide, which is exactly the configuration-drift demo (D6).
+
 ## 4. Removed or deliberately not built
 
 _Filled in as the work progresses._
