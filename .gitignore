@@ -17,3 +17,10 @@ deploy/.deployed.previous
 # Local design-tool context (not part of the deliverable)
 PRODUCT.md
 .impeccable/
+
+# Personal notes and local files (never part of the repo)
+NOTES.md
+selfnotes.md
+CLAUDE.md
+*token*.txt
+.claude/
