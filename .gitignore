@@ -11,3 +11,5 @@ docs/
 deploy/.env.prod
 deploy/secrets/*
 !deploy/secrets/README.md
+deploy/.deployed
+deploy/.deployed.previous
