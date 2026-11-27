@@ -1,0 +1,14 @@
+# Allow-list: the build context gets only what the image needs. Anything not listed here (.env, secrets, .data,
+# PDFs, docs, tests, .git, virtualenvs) never leaves the machine, even by accident.
+*
+!pyproject.toml
+!uv.lock
+!reviewer_loop/
+!api/
+!benchmark/
+!standards/
+!results/benchmark_results.json
+!results/report.md
+!results/runs/bench_*.json
+**/__pycache__
+**/*.pyc

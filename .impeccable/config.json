@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "pulsing-dot",
+        "value": "*",
+        "files": [
+          "api/static/index.html"
+        ],
+        "createdAt": "2026-11-27T15:10:42.428Z",
+        "reason": "Claude: the pulse appears only on the Running/Waiting heading of a run that is genuinely queued or running (polled every 2 s), stops when the run ends, and is disabled under prefers-reduced-motion"
+      }
+    ]
+  }
+}

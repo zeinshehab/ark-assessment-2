@@ -207,9 +207,9 @@ def test_provider_failure_stops_cleanly_with_last_code(monkeypatch):
 
 def test_overloaded_reviewer_falls_back_to_second_model(monkeypatch):
     def fake_cached_call(model, payload, call):
-        if model == config.REVIEWER_MODEL:
+        if model == config.get_settings().reviewer_model:
             raise ProviderError("ServerError: 503 UNAVAILABLE. high demand")
         return LLMResult('{"summary": "ok", "findings": []}', model, 5, 5)
     monkeypatch.setattr(llm, "_cached_call", fake_cached_call)
     result = reviewer.review("task", SOLUTION, TESTS, {"status": "passed"}, {"issues": []}, [])
-    assert result["usage"]["model"] == config.REVIEWER_FALLBACK_MODEL
+    assert result["usage"]["model"] == config.get_settings().reviewer_fallback_model

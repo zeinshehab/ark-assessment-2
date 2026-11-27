@@ -27,7 +27,7 @@ REVISE_RULES = """Instructions:
 
 
 def _new_usage() -> dict:
-    return {"model": llm.config.GENERATOR_MODEL, "prompt_tokens": 0, "completion_tokens": 0, "calls": 0,
+    return {"model": llm.config.get_settings().generator_model, "prompt_tokens": 0, "completion_tokens": 0, "calls": 0,
             "cached_calls": 0}
 
 
@@ -50,7 +50,7 @@ def _ask(messages: list[dict]) -> tuple[GeneratorOutput, dict]:
             error = "the response was not valid JSON"
         messages = messages + [{"role": "user", "content": f"Your previous answer was rejected: {error}. "
                                                             "Reply with only the JSON object."}]
-    raise ProviderError(f"Generator returned malformed output twice ({error})")
+    raise ProviderError(f"Generator returned malformed output twice ({error})", "malformed_output")
 
 
 def draft(task: str) -> tuple[GeneratorOutput, dict]:
