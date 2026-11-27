@@ -61,7 +61,7 @@ def rescore(tasks: list[dict]) -> None:
         if path.exists():
             record = json.loads(path.read_text(encoding="utf-8"))
             record["evaluation"] = evaluate(task, record)
-            orchestrator.save_run(record, f"bench_{task['id']}")
+            orchestrator.save_run(record, f"bench_{task['id']}", RUNS_DIR)
 
 
 def verify(tasks: list[dict]) -> None:
@@ -82,12 +82,12 @@ async def run_tasks(tasks: list[dict], force: bool) -> None:
         async with ToolClient() as tools:
             record = await orchestrator.run_task(task["prompt"], tools, task_id=task["id"])
         record["evaluation"] = evaluate(task, record)
-        orchestrator.save_run(record, f"bench_{task['id']}")
+        orchestrator.save_run(record, f"bench_{task['id']}", RUNS_DIR)
         ev = record["evaluation"]
         print(f"{task['id']:15} {record['status']:10} rounds={len(record['iterations'])} "
               f"baseline={ev['baseline'] and ev['baseline']['passed']}/{ev['baseline'] and ev['baseline']['total']} "
               f"final={ev['final'] and ev['final']['passed']}/{ev['final'] and ev['final']['total']} "
-              f"({time.time() - start:.0f}s, {config.GENERATOR_MODEL} today: {llm.tokens_used_today(config.GENERATOR_MODEL)})", flush=True)
+              f"({time.time() - start:.0f}s, {config.get_settings().generator_model} today: {llm.tokens_used_today(config.get_settings().generator_model)})", flush=True)
 
 
 # ---------------- report ----------------
@@ -146,7 +146,7 @@ def build_report(tasks: list[dict]) -> str:
 
     lines = [
         "# Benchmark results", "",
-        (f"Generator: `{config.GENERATOR_MODEL}` (Groq) · Reviewer: `{config.REVIEWER_MODEL}` (Google) · "
+        (f"Generator: `{config.get_settings().generator_model}` (Groq) · Reviewer: `{config.get_settings().reviewer_model}` (Google) · "
          f"Tasks run: {len(rows)}"), "",
         ("Baseline = the generator's first draft (no review). Orchestrated = the final code after the review loop. "
          "Both are scored with hidden tests that the loop never sees."), "",

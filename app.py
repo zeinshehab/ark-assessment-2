@@ -13,6 +13,8 @@ import streamlit as st
 from benchmark.run_benchmark import load_tasks
 from reviewer_loop import config, orchestrator
 
+settings = config.get_settings()
+
 st.set_page_config(page_title="Multi-model code review", layout="wide")
 RUNS_DIR = config.RESULTS_DIR / "runs"
 
@@ -99,14 +101,14 @@ def show_run(run: dict) -> None:
 
 
 st.title("Multi-model code review orchestrator")
-st.caption(f"Generator: {config.GENERATOR_MODEL} (Groq) · Reviewer: {config.REVIEWER_MODEL} (Google), via our MCP server")
+st.caption(f"Generator: {settings.generator_model} (Groq) · Reviewer: {settings.reviewer_model} (Google), via our MCP server")
 page = st.sidebar.radio("Page", ["Run a task", "Saved runs", "Benchmark report"])
 
 if page == "Run a task":
     tasks = {t["id"]: t["prompt"] for t in load_tasks()}
     choice = st.selectbox("Benchmark task (or write your own below)", ["(custom)"] + list(tasks))
     task_text = st.text_area("Task", value=tasks.get(choice, ""), height=150)
-    max_rounds = st.slider("Max review rounds (timeout)", 1, 6, config.MAX_ITERATIONS)
+    max_rounds = st.slider("Max review rounds (timeout)", 1, 6, settings.max_iterations)
     inject = st.checkbox("Inject a deliberately wrong review finding (demo of declining a finding)")
     if st.button("Run", type="primary", disabled=not task_text.strip()):
         with st.spinner("Running the generate → test → lint → review loop (rate-limited free tiers, may take a few minutes)..."):
