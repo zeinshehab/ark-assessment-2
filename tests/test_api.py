@@ -130,6 +130,13 @@ def test_health_readiness_status_and_security_headers(client):
     assert headers["X-Content-Type-Options"] == "nosniff" and "default-src 'self'" in headers["Content-Security-Policy"]
 
 
+def test_ui_is_served_with_a_strict_content_security_policy(client):
+    page = client.get("/")
+    assert page.status_code == 200 and "<title>Crosscheck</title>" in page.text
+    assert "default-src 'self'" in page.headers["Content-Security-Policy"]   # no third-party scripts or styles
+    assert client.get("/app.js").status_code == 200
+
+
 # ---------- authentication (production) ----------
 
 @pytest.fixture
