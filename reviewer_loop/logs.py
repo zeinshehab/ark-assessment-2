@@ -22,7 +22,8 @@ import time
 current_run_id: contextvars.ContextVar[str | None] = contextvars.ContextVar("run_id", default=None)
 
 _KEY_SHAPES = re.compile(r"gsk_[A-Za-z0-9]{8,}|AIza[0-9A-Za-z_\-]{16,}")
-_STANDARD_ATTRS = set(vars(logging.LogRecord("", 0, "", 0, "", None, None))) | {"message", "asctime"}
+# Attributes every LogRecord has, plus uvicorn's "color_message" (a copy of the message with terminal colour codes)
+_STANDARD_ATTRS = set(vars(logging.LogRecord("", 0, "", 0, "", None, None))) | {"message", "asctime", "color_message"}
 REDACTED = "[REDACTED]"
 
 
