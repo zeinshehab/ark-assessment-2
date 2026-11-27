@@ -164,6 +164,7 @@ async def status(request: Request, user: str = Depends(current_user)):
     runner = request.app.state.runner
     return {
         "version": settings.app_version, "env": settings.app_env, "demo_injection": settings.allow_demo_injection,
+        "operator_contact": settings.operator_contact,
         "max_iterations": settings.max_iterations, "max_task_chars": settings.max_task_chars,
         "providers": {name: {"state": b.state, "consecutive_failures": b.failures, "last_error_type": b.last_error_type}
                       for name, b in BREAKERS.items()},

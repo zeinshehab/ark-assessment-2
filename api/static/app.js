@@ -262,7 +262,8 @@ function verdict(record, steps, findings) {
     out.push(el("div", { class: "problem", role: "alert" }, el("h3", {}, heading), el("p", {}, advice),
       record.error ? el("details", {}, el("summary", {}, "Technical detail"),
         el("p", {}, `Error type: ${record.error_type || "none"}`), el("p", {}, record.error),
-        record.id ? el("p", {}, `Run id: ${record.id}`) : null) : null));
+        record.id ? el("p", {}, `Run id: ${record.id}`) : null) : null,
+      status && status.operator_contact ? el("p", {}, `Operator: ${status.operator_contact}`) : null));
   }
   const escalated = record.escalated_to_human || [];
   if (escalated.length) {
