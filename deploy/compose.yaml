@@ -1,0 +1,58 @@
+# Production stack for one host (the MacBook in the demo). Run it through deploy.sh, which also checks readiness
+# and rolls back:   ./deploy/deploy.sh <git-sha>
+#
+#   app          the API + UI (image built by CI, tagged with the git commit)
+#   cloudflared  outbound-only Cloudflare Tunnel: the only way in from the internet, behind Cloudflare Access login.
+#                It runs under the "tunnel" profile so the app can also be started alone for local checks.
+#
+# Files next to this one (both gitignored):
+#   .env.prod          non-secret settings (copy .env.prod.example)
+#   secrets/<name>     one file per secret (see secrets/README.md)
+name: crosscheck
+
+services:
+  app:
+    image: ghcr.io/zeinshehab/ark-assessment-2:${APP_TAG:?set APP_TAG to the image tag (git SHA) to run}
+    env_file: .env.prod
+    secrets: [groq_key, gemini_key]
+    volumes:
+      - app-data:/data              # run records, usage tally (the only writable place besides /tmp)
+    read_only: true                 # the container's filesystem is read-only
+    tmpfs:
+      - /tmp:size=256m,mode=1777    # sandbox and lint temp dirs
+    cap_drop: [ALL]                 # no Linux capabilities: the app needs none
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    cpus: 1.0
+    pids_limit: 256                 # a fork bomb in generated code can't exhaust the host
+    ports:
+      - "127.0.0.1:8000:8000"       # loopback only: from outside, the tunnel is the only route in
+    restart: unless-stopped         # crash -> Docker restarts it (the image's HEALTHCHECK marks it unhealthy)
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "5"}
+
+  cloudflared:
+    profiles: [tunnel]
+    image: cloudflare/cloudflared:2026.11.2@sha256:55c7e3e8d89d5e8d20b75a82f3602cbf98e06db406e73e282073cfdc5a9a3af6
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN_FILE: /run/secrets/tunnel_token   # the token is a secret file, not an env var
+    secrets: [tunnel_token]
+    depends_on:
+      app: {condition: service_healthy}
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+
+secrets:
+  groq_key: {file: ./secrets/groq_key}
+  gemini_key: {file: ./secrets/gemini_key}
+  tunnel_token: {file: ./secrets/tunnel_token}
+
+volumes:
+  app-data:
