@@ -13,17 +13,17 @@ handling, observability, security, CI/CD and deployment.
 
 | Area | Round 2 (prototype) | Round 3 (production) | Why |
 |---|---|---|---|
-| UI / app server | Streamlit, run executes inside the browser session | _in progress_ | |
-| Dependencies | `requirements.txt` with top-level pins | _in progress_ | |
-| Configuration | constants in `config.py`, keys from `.env` | _in progress_ | |
-| Secrets | `.env` file (gitignored) | _in progress_ | |
-| Logging | `print` to stderr | _in progress_ | |
-| Metrics / health | none | _in progress_ | |
-| Failure handling | retries, fallback reviewer, daily token guard | _in progress_ | |
-| Security | sandbox audit hook, keys stripped from sandbox | _in progress_ | |
-| Packaging | run from a local venv | _in progress_ | |
-| CI/CD | none | _in progress_ | |
-| Deployment | none (local Streamlit) | _in progress_ | |
+| UI / app server | Streamlit, run executes inside the browser session | FastAPI + hand-written UI; runs queued and executed in worker threads with live progress | Health/metrics endpoints, a queue, input validation, a UI that shows the argument |
+| Dependencies | `requirements.txt` with top-level pins | `pyproject.toml` + hash-locked `uv.lock`; `pip-audit` + Dependabot | Identical installs everywhere; known vulnerabilities caught |
+| Configuration | constants in `config.py`, keys from `.env` | validated settings from environment variables, development/production modes, fail-fast startup | Operators change behaviour without code; bad config is caught at start |
+| Secrets | `.env` file (gitignored) | secret files in production, `SecretStr`, redaction in logs and run records | Keys never in Git, images, env vars, logs or the UI |
+| Logging | `print` to stderr | JSON logs with run/request ids, redacted | Searchable, alertable, safe |
+| Metrics / health | none | `/healthz`, `/readyz`, `/api/status`, Prometheus `/metrics`, UI status strip | An operator can tell what's happening |
+| Failure handling | retries, fallback reviewer, daily token guard | + typed errors, timeouts, circuit breakers, run deadline, crash containment, sandbox resource limits | Every failure ends cleanly, typed, with bounded cost |
+| Security | sandbox audit hook, keys stripped from sandbox | + Cloudflare Access login verified in the app, per-user isolation and limits, hardened container, CSP, safe XML parsing | Internal business use |
+| Packaging | run from a local venv | non-root, read-only, capability-free Docker image (amd64 + arm64) | Reproducible, constrained runtime |
+| CI/CD | none | GitHub Actions: lint, tests, audit, image build, smoke test, deploy-rollback test, publish | Every release is tested the way it runs |
+| Deployment | none (local Streamlit) | Docker Compose on one host behind Cloudflare Tunnel; `deploy.sh` with automatic rollback | Repeatable deploys, recovery without a human |
 
 ## 2. Decision log
 
@@ -348,6 +348,21 @@ Each decision lists the alternatives considered and who made the call ("user" or
 
 **Lesson:** test operational scripts in the same configuration production uses. A deploy script with an untested failure path is worse than none, because it gives false confidence.
 
+### Step 11: documentation
+- **README rewritten** for the production version: setup, architecture, CI/CD from repository to production, deployment, rollback, security, monitoring (with suggested alert rules), failure handling (what is retried, and the cost bounds), evaluation, known limitations.
+- **Architecture diagram** `assets/architecture.svg`: drawn from the actual solution, light and dark.
+- **`TECHNICAL_NOTE.md`:** the five questions plus "what would worry you most".
+- **Stopped tracking local design-tool context** (`PRODUCT.md`, `.impeccable/`): it isn't part of the deliverable.
+
 ## 4. Removed or deliberately not built
 
-_Filled in as the work progresses._
+**Removed:**
+- Streamlit (`app.py`) and `requirements.txt`, replaced by the API/UI and `uv.lock`.
+
+**Deliberately not built** (see TECHNICAL_NOTE.md for the reasoning and what comes next):
+- **Cloud infrastructure:** Kubernetes, Terraform, managed platforms (D2).
+- **A running Prometheus/Grafana stack and alert delivery.** The metrics and rules exist (D8).
+- **A database, a shared queue, multiple instances.** Correct for one instance only.
+- **Staging, blue/green deploys, continuous deployment.** Promotion is a deliberate `deploy.sh` (D3).
+- **A separate sandbox service, a secrets manager, image signing.**
+- **Load testing, SSO groups, audit trails.**

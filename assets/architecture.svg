@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 740" role="img" aria-label="Production architecture: a pull request runs GitHub Actions (lint, tests, audit, image build, smoke and deploy tests); main publishes a multi-arch image to GitHub Container Registry; the operator runs deploy.sh on the host, which pulls the image, checks readiness and rolls back automatically. Users reach the app through Cloudflare (HTTPS and Access login) and an outbound tunnel to the host, where Docker Compose runs cloudflared and the app container. The app calls Groq to generate code and starts an MCP server over stdio, which runs tests in a sandbox subprocess, runs ruff, and calls Gemini to review.">
+  <style>
+    .bg { fill: #ffffff; }
+    .box { fill: #f6f7f9; stroke: #9aa3b5; stroke-width: 1.2; }
+    .host { fill: none; stroke: #4a4fd1; stroke-width: 1.6; stroke-dasharray: 6 4; }
+    .band { fill: #5d6677; font: 600 12px -apple-system, "Segoe UI", system-ui, sans-serif; }
+    .title { fill: #1c2230; font: 600 14px -apple-system, "Segoe UI", system-ui, sans-serif; }
+    .text { fill: #3a4356; font: 12px -apple-system, "Segoe UI", system-ui, sans-serif; }
+    .label { fill: #5d6677; font: italic 11.5px -apple-system, "Segoe UI", system-ui, sans-serif; }
+    .line { stroke: #5d6677; stroke-width: 1.4; fill: none; }
+    .tunnel { stroke: #0d7f80; stroke-width: 1.8; stroke-dasharray: 5 4; fill: none; }
+    .ah { fill: #5d6677; }
+    .gen { stroke: #4a4fd1; } .gentext { fill: #4a4fd1; }
+    .rev { stroke: #0d7f80; } .revtext { fill: #0d7f80; }
+    .hosttitle { fill: #4a4fd1; font: 600 13px -apple-system, "Segoe UI", system-ui, sans-serif; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .box { fill: #161b22; stroke: #4b5568; }
+      .host { stroke: #9ea2ff; }
+      .band, .label, .text { fill: #aab3c5; }
+      .title { fill: #e6edf3; }
+      .line { stroke: #aab3c5; } .ah { fill: #aab3c5; }
+      .tunnel { stroke: #4fc4c5; }
+      .gen { stroke: #9ea2ff; } .gentext, .hosttitle { fill: #9ea2ff; }
+      .rev { stroke: #4fc4c5; } .revtext { fill: #4fc4c5; }
+    }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="ah" d="M0,0 L10,5 L0,10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="1120" height="740"/>
+
+  <!-- ================= delivery: repo -> CI -> registry ================= -->
+  <text class="band" x="20" y="32">Delivery: every change goes repository → CI → registry</text>
+
+  <rect class="box" x="20" y="56" width="150" height="92" rx="8"/>
+  <text class="title" x="95" y="92" text-anchor="middle">Developer</text>
+  <text class="text" x="95" y="114" text-anchor="middle">branch, commit,</text>
+  <text class="text" x="95" y="130" text-anchor="middle">pull request</text>
+
+  <rect class="box" x="210" y="56" width="170" height="92" rx="8"/>
+  <text class="title" x="295" y="92" text-anchor="middle">GitHub repository</text>
+  <text class="text" x="295" y="114" text-anchor="middle">main + pull requests</text>
+  <text class="text" x="295" y="130" text-anchor="middle">Dependabot updates</text>
+
+  <rect class="box" x="420" y="48" width="340" height="108" rx="8"/>
+  <text class="title" x="436" y="74">GitHub Actions CI</text>
+  <text class="text" x="436" y="96">checks: ruff, pytest (fake LLMs), pip-audit</text>
+  <text class="text" x="436" y="116">image: docker build, smoke test, deploy test</text>
+  <text class="text" x="436" y="136">publish (main only): amd64 + arm64 image</text>
+
+  <rect class="box" x="800" y="56" width="300" height="92" rx="8"/>
+  <text class="title" x="950" y="92" text-anchor="middle">GitHub Container Registry</text>
+  <text class="text" x="950" y="114" text-anchor="middle">immutable image per commit</text>
+  <text class="text" x="950" y="130" text-anchor="middle">ark-assessment-2:&lt;short SHA&gt;</text>
+
+  <line class="line" x1="170" y1="102" x2="206" y2="102" marker-end="url(#arrow)"/>
+  <line class="line" x1="380" y1="102" x2="416" y2="102" marker-end="url(#arrow)"/>
+  <text class="label" x="398" y="94" text-anchor="middle">runs</text>
+  <line class="line" x1="760" y1="102" x2="796" y2="102" marker-end="url(#arrow)"/>
+  <text class="label" x="778" y="94" text-anchor="middle">push</text>
+
+  <!-- deploy: registry -> host -->
+  <line class="line" x1="950" y1="148" x2="950" y2="262" marker-end="url(#arrow)"/>
+  <text class="label" x="938" y="196" text-anchor="end">operator runs deploy.sh &lt;sha&gt;:</text>
+  <text class="label" x="938" y="213" text-anchor="end">pull → /readyz → roll back if not ready</text>
+
+  <!-- ================= runtime ================= -->
+  <text class="band" x="20" y="252">Runtime: how a request reaches the app</text>
+
+  <rect class="box" x="20" y="330" width="140" height="80" rx="8"/>
+  <text class="title" x="90" y="364" text-anchor="middle">Browser</text>
+  <text class="text" x="90" y="384" text-anchor="middle">engineer / operator</text>
+
+  <rect class="box" x="190" y="300" width="190" height="140" rx="8"/>
+  <text class="title" x="285" y="328" text-anchor="middle">Cloudflare edge</text>
+  <text class="text" x="285" y="352" text-anchor="middle">DNS + HTTPS</text>
+  <text class="text" x="285" y="372" text-anchor="middle">Access: email login</text>
+  <text class="text" x="285" y="392" text-anchor="middle">adds a signed JWT</text>
+  <text class="text" x="285" y="412" text-anchor="middle">to every request</text>
+
+  <line class="line" x1="160" y1="370" x2="186" y2="370" marker-end="url(#arrow)"/>
+
+  <!-- host -->
+  <rect class="host" x="420" y="266" width="680" height="346" rx="12"/>
+  <text class="hosttitle" x="436" y="290">Production host (MacBook) · Docker Compose</text>
+
+  <rect class="box" x="440" y="330" width="150" height="80" rx="8"/>
+  <text class="title" x="515" y="362" text-anchor="middle">cloudflared</text>
+  <text class="text" x="515" y="382" text-anchor="middle">tunnel connector</text>
+
+  <path class="tunnel" d="M380,370 L436,370" marker-end="url(#arrow)"/>
+  <text class="label" x="285" y="466" text-anchor="middle">dashed: the tunnel, opened outbound</text>
+  <text class="label" x="285" y="482" text-anchor="middle">by the host, so no open ports</text>
+
+  <rect class="box" x="630" y="306" width="240" height="150" rx="8"/>
+  <text class="title" x="646" y="330">app container</text>
+  <text class="text" x="646" y="352">FastAPI: JSON API + web UI</text>
+  <text class="text" x="646" y="370">checks the Access JWT</text>
+  <text class="text" x="646" y="388">run queue, worker thread</text>
+  <text class="text" x="646" y="406">orchestrator + finding ledger</text>
+  <text class="text" x="646" y="424">/healthz /readyz /metrics</text>
+  <text class="text" x="646" y="442">non-root, read-only filesystem</text>
+
+  <line class="line" x1="590" y1="370" x2="626" y2="370" marker-end="url(#arrow)"/>
+  <text class="label" x="608" y="326" text-anchor="middle">http://</text>
+  <text class="label" x="608" y="341" text-anchor="middle">app:8000</text>
+
+  <rect class="box" x="900" y="306" width="180" height="58" rx="8"/>
+  <text class="title" x="990" y="330" text-anchor="middle">/data volume</text>
+  <text class="text" x="990" y="350" text-anchor="middle">run records, usage tally</text>
+
+  <rect class="box" x="900" y="384" width="180" height="58" rx="8"/>
+  <text class="title" x="990" y="408" text-anchor="middle">secret files</text>
+  <text class="text" x="990" y="428" text-anchor="middle">/run/secrets (API keys)</text>
+
+  <line class="line" x1="870" y1="335" x2="896" y2="335" marker-end="url(#arrow)"/>
+  <line class="line" x1="896" y1="413" x2="870" y2="413" marker-end="url(#arrow)"/>
+
+  <rect class="box" x="630" y="490" width="240" height="98" rx="8"/>
+  <text class="title" x="646" y="514">MCP server (our own)</text>
+  <text class="text" x="646" y="536">subprocess, JSON-RPC over stdio</text>
+  <text class="text" x="646" y="554">run_tests, run_static_analysis,</text>
+  <text class="text" x="646" y="572">review_code</text>
+
+  <line class="line" x1="750" y1="456" x2="750" y2="486" marker-end="url(#arrow)"/>
+  <text class="label" x="760" y="476">MCP tool calls</text>
+
+  <rect class="box" x="900" y="490" width="180" height="98" rx="8"/>
+  <text class="title" x="916" y="514">sandbox subprocess</text>
+  <text class="text" x="916" y="536">pytest on generated code</text>
+  <text class="text" x="916" y="554">no keys, audit hook,</text>
+  <text class="text" x="916" y="572">memory/CPU limits</text>
+
+  <line class="line" x1="870" y1="539" x2="896" y2="539" marker-end="url(#arrow)"/>
+
+  <!-- external LLM providers -->
+  <rect class="box gen" x="440" y="652" width="180" height="62" rx="8"/>
+  <text class="title gentext" x="530" y="678" text-anchor="middle">Groq: gpt-oss-20b</text>
+  <text class="text" x="530" y="698" text-anchor="middle">generates code + tests</text>
+
+  <rect class="box rev" x="660" y="652" width="180" height="62" rx="8"/>
+  <text class="title revtext" x="750" y="678" text-anchor="middle">Gemini Flash-Lite</text>
+  <text class="text" x="750" y="698" text-anchor="middle">reviews (other provider)</text>
+
+  <path class="line" d="M630,440 L600,440 L600,648" marker-end="url(#arrow)"/>
+  <text class="label" x="592" y="630" text-anchor="end">HTTPS</text>
+  <line class="line" x1="750" y1="588" x2="750" y2="648" marker-end="url(#arrow)"/>
+  <text class="label" x="760" y="630">HTTPS</text>
+
+  <text class="label" x="880" y="684">LLM providers: free tiers,</text>
+  <text class="label" x="880" y="700">timeouts, retries, circuit breakers</text>
+</svg>
