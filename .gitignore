@@ -13,3 +13,7 @@ deploy/secrets/*
 !deploy/secrets/README.md
 deploy/.deployed
 deploy/.deployed.previous
+
+# Local design-tool context (not part of the deliverable)
+PRODUCT.md
+.impeccable/
