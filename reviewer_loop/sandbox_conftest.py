@@ -9,9 +9,26 @@ Policy:
   * no network, no subprocesses, no native libraries, no registry
   * writes / deletes / renames only inside the sandbox directory
   * reads only inside the sandbox directory and the Python installation (so e.g. ~/.env is unreadable)
+  * on Linux/macOS (the production container): hard limits on memory, file size and CPU time, so a memory bomb
+    gets a MemoryError instead of exhausting the container. Soft and hard limits are equal, and an unprivileged
+    process cannot raise a hard limit again. (Set here, inside the child, rather than with subprocess's
+    preexec_fn, which is unsafe when the parent process has threads, as the API does.)
 """
 import os
 import sys
+
+try:
+    import resource  # POSIX only; on Windows the wall-clock timeout in sandbox.py is the only limit
+except ImportError:
+    resource = None
+
+_LIMITS = {"RLIMIT_AS": 1024 * 2**20, "RLIMIT_FSIZE": 10 * 2**20, "RLIMIT_CPU": 30}  # 1 GB, 10 MB, 30 s
+if resource is not None:
+    for _name, _value in _LIMITS.items():
+        try:
+            resource.setrlimit(getattr(resource, _name), (_value, _value))
+        except (ValueError, OSError, AttributeError):  # e.g. macOS does not enforce RLIMIT_AS
+            pass
 
 
 def _norm(path: str) -> str:

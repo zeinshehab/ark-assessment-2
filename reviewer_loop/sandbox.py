@@ -13,8 +13,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import xml.etree.ElementTree as ET
 from pathlib import Path
+
+import defusedxml.ElementTree as ET  # the report is written next to untrusted code, so parse it defensively
 
 from . import config
 
@@ -43,8 +44,9 @@ def _parse_junit(report: Path) -> list[dict]:
 
 
 def run_tests(solution_code: str, test_code: str, test_filename: str = "test_solution.py",
-              timeout_s: int = config.TEST_TIMEOUT_S) -> dict:
+              timeout_s: int | None = None) -> dict:
     """Run pytest on solution.py + a test file. Returns a JSON-serialisable result dict."""
+    timeout_s = timeout_s or config.get_settings().test_timeout_s
     workdir = tempfile.mkdtemp(prefix="sandbox_")
     try:
         Path(workdir, "solution.py").write_text(solution_code, encoding="utf-8")
