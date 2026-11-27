@@ -226,6 +226,24 @@ Each decision lists the alternatives considered and who made the call ("user" or
 
 **Total so far: 57 tests passing (1 Linux-only test skipped on Windows).**
 
+### Step 6: the web UI (replaces Streamlit's UI, D1)
+- **Design chosen by the user from three mockups: "Two voices".**
+  - Each round of a run is shown as a conversation in three columns: the generator (left), the reviewer (right) and, between them, the **evidence and rulings**: test results, lint results and the orchestrator's decisions (fix kept, rolled back, disputed, late objection).
+  - This makes the core idea (two models disagree; objective evidence and fixed rules settle it) visible at a glance. The Streamlit version showed the same data as separate tables.
+  - The conversation is built from each finding's history, which already records who changed its status in which round and why.
+- **Files:** `api/static/index.html`, `app.css`, `app.js`. Plain HTML/CSS/JS served by FastAPI, with no framework and no build step. System fonts only, nothing loaded from other sites (which the strict Content-Security-Policy enforces).
+- **Pages:**
+  - new review: task box, example tasks, round limit, and the demo switch only where it's allowed;
+  - my runs;
+  - a run page with live progress (polls every 2 s while queued or running), the verdict, the conversation, and tabs for final code, changes per round, all findings with their full trail, and MCP tool calls;
+  - benchmark (headline numbers + table, each task opening its recorded run).
+- **The user sees failures clearly.** Each error type has a plain-language explanation and what to do next, e.g. `provider_auth`: "A model provider rejected our API key. This needs an operator." Technical details and the run id are one click away for support. Disputed findings show as "Needs a human decision".
+- **The operator's view is in every page header:** provider health (green/amber/red from the circuit breakers), queue, tokens used today against the budget, and the running version.
+- **Security:** everything from users or models is inserted with `textContent`, never parsed as HTML. A review finding containing `<script>` is displayed, not executed. This matters because this app shows LLM output, which is untrusted.
+- **Quality floor:** light and dark mode, stacks to one column on phones, visible keyboard focus, reduced-motion respected.
+- **Removed `app.py`** (Streamlit).
+- **Test:** the UI is served with the strict CSP header.
+
 ## 4. Removed or deliberately not built
 
 _Filled in as the work progresses._
