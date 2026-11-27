@@ -21,6 +21,7 @@ chmod 644 "$WORK/secrets/"*   # readable by the image's non-root user (uid 10001
 run() {  # the same hardening flags as deploy/compose.yaml
   docker run -d --name "$1" --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges \
     -v "$MOUNT/secrets:/run/secrets:ro" -e CF_ACCESS_TEAM_DOMAIN=smoke.cloudflareaccess.com -e CF_ACCESS_AUD=smoke \
+    -e OPERATOR_CONTACT=ops@example.com \
     -p "$2:8000" "$IMAGE" >/dev/null
 }
 

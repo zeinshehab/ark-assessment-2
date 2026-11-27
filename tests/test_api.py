@@ -143,7 +143,8 @@ def test_ui_is_served_with_a_strict_content_security_policy(client):
 def production(monkeypatch):
     """Production settings with a locally generated signing key standing in for Cloudflare's."""
     for name, value in {"APP_ENV": "production", "CF_ACCESS_TEAM_DOMAIN": "team.cloudflareaccess.com",
-                        "CF_ACCESS_AUD": "our-aud", "SECRETS_DIR": "/nonexistent"}.items():
+                        "CF_ACCESS_AUD": "our-aud", "SECRETS_DIR": "/nonexistent",
+                        "OPERATOR_CONTACT": "ops@example.com"}.items():
         monkeypatch.setenv(name, value)
     config.get_settings.cache_clear()
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)

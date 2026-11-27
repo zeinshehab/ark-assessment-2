@@ -17,6 +17,7 @@ def _production(monkeypatch, tmp_path, **files):
     monkeypatch.delenv("GEMINI_KEY")
     monkeypatch.setenv("CF_ACCESS_TEAM_DOMAIN", "team.cloudflareaccess.com")
     monkeypatch.setenv("CF_ACCESS_AUD", "aud-tag")
+    monkeypatch.setenv("OPERATOR_CONTACT", "ops@example.com")
 
 
 def test_production_reads_secret_files_and_switches_defaults(monkeypatch, tmp_path):
@@ -62,3 +63,11 @@ def test_invalid_values_are_rejected_by_name(monkeypatch, name, value):
         config.load_settings()
     assert name in str(err.value)
     assert DUMMY_GEMINI_KEY not in str(err.value)
+
+
+def test_production_requires_an_operator_contact(monkeypatch, tmp_path):
+    """Added in a release after the first deployment: hosts without it must refuse to start (the drift demo)."""
+    _production(monkeypatch, tmp_path, groq_key=DUMMY_GROQ_KEY, gemini_key=DUMMY_GEMINI_KEY)
+    monkeypatch.delenv("OPERATOR_CONTACT")
+    with pytest.raises(config.ConfigError, match="OPERATOR_CONTACT"):
+        config.load_settings()

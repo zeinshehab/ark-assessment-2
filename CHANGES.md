@@ -311,6 +311,18 @@ Each decision lists the alternatives considered and who made the call ("user" or
 - A good build deployed, and became ready in 5 s.
 - Then a build whose configuration is invalid on this host was deployed. It crash-looped with `GROQ_DAILY_TOKEN_BUDGET: Input should be greater than 0`; deploy.sh printed that line, rolled back, and the good version was serving again 6 s later.
 - **Finding:** settings in `.env.prod` override the image's own environment variables. A realistic bad deployment is therefore a release that *needs* something the host doesn't provide, which is exactly the configuration-drift demo (D6).
+- **First published image verified:** `3a92541` (the merge of PR #1) is public on GHCR with amd64 and arm64 builds. `deploy.sh 3a92541` pulled it and it was ready in about 40 s.
+
+### Step 10: a release that needs new configuration (`OPERATOR_CONTACT`)
+- **What:** production now requires `OPERATOR_CONTACT`, the person users should contact when a run fails. The run page's error panel shows it; `/api/status` exposes it.
+- **Why it's a real feature:** the error messages for `provider_auth` and `internal` say "this needs an operator" without saying who that is.
+- **Why it doubles as the bad-deployment demo (D6):**
+  - the release is real and its CI is green, because the smoke test provides the new setting;
+  - but a production host whose `.env.prod` predates it refuses to start the new version ("OPERATOR_CONTACT is required in production");
+  - `deploy.sh` sees readiness fail and rolls back automatically to the previous version;
+  - the fix is the normal operational one: add the setting to `.env.prod` and deploy the same SHA again.
+- **Files:** `reviewer_loop/config.py`, `api/main.py`, `api/static/app.js`, `.env.example`, `deploy/.env.prod.example`, `scripts/smoke.sh`.
+- **Test:** production without `OPERATOR_CONTACT` refuses to load its configuration.
 
 ## 4. Removed or deliberately not built
 
