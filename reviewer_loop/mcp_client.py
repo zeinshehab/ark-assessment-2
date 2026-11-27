@@ -5,6 +5,7 @@ Self-test:  python -m reviewer_loop.mcp_client
 """
 import asyncio
 import json
+import os
 import sys
 import time
 
@@ -12,6 +13,10 @@ from mcp import Client
 from mcp.client.stdio import StdioServerParameters
 
 from . import config
+from .logs import current_run_id
+
+
+SERVER_MODULE = "reviewer_loop.mcp_server"  # tests point this at a deliberately crashing server
 
 
 class ToolError(Exception):
@@ -23,10 +28,20 @@ def _summary(value) -> str:
     return text if len(text) <= 120 else text[:117] + "..."
 
 
+def _server_env() -> dict:
+    """The server is started with only a few safe variables by default (PATH, HOME, ...). Pass it our settings
+    variables too, so it loads the same configuration (APP_ENV, SECRETS_DIR, DATA_DIR, keys if given as env vars)."""
+    names = {name.upper() for name in config.Settings.model_fields} | {"SECRETS_DIR"}
+    env = {key: value for key, value in os.environ.items() if key.upper() in names}
+    if current_run_id.get():
+        env["RUN_ID"] = current_run_id.get()
+    return env
+
+
 class ToolClient:
     def __init__(self):
-        params = StdioServerParameters(command=sys.executable, args=["-m", "reviewer_loop.mcp_server"],
-                                       cwd=str(config.ROOT))
+        params = StdioServerParameters(command=sys.executable, args=["-m", SERVER_MODULE],
+                                       cwd=str(config.ROOT), env=_server_env())
         self._client = Client(params)
         self.calls: list[dict] = []
         self.iteration = 0  # set by the orchestrator so calls can be grouped per iteration

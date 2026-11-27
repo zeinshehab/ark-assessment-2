@@ -5,18 +5,17 @@ Run directly with:  python -m reviewer_loop.mcp_server
 stdio transport: the client writes JSON-RPC requests to this process's stdin and reads responses from
 its stdout. stdout is therefore reserved for the protocol, and anything we log must go to stderr.
 """
-import logging
+import os
 
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
-from reviewer_loop import reviewer, sandbox, static_analysis
-from reviewer_loop.llm import ProviderError
+from reviewer_loop import config, reviewer, sandbox, static_analysis
+from reviewer_loop.errors import ProviderError
+from reviewer_loop.logs import current_run_id, setup_logging
 
 server = MCPServer("code-review-tools", instructions="Test, lint and cross-model review tools for Python code.",
                    log_level="WARNING")
-for noisy in ("httpx", "google_genai"):  # per-request INFO logs (they go to stderr, but clutter the console)
-    logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
 @server.tool()
@@ -40,11 +39,16 @@ def review_code(task: str, solution_code: str, test_code: str, test_results: dic
     Returns a validated structured review: findings with severity, location, rationale and suggested fix."""
     # Anticipated failures are raised as ToolError: the client receives an error result (is_error=True) with our
     # message. Any other exception is treated by the SDK as a crash and the client only sees a generic message.
+    # The message starts with the error type in brackets, so the app can classify it (errors.classify).
     try:
         return reviewer.review(task, solution_code, test_code, test_results, lint_results, ledger)
-    except (ProviderError, ValueError) as exc:
-        raise ToolError(str(exc)) from exc
+    except ProviderError as exc:
+        raise ToolError(f"[{exc.error_type}] {exc}") from exc
+    except ValueError as exc:  # the reviewer answered twice with output that failed validation
+        raise ToolError(f"[malformed_output] {exc}") from exc
 
 
 if __name__ == "__main__":
+    setup_logging(config.get_settings())          # stderr only: stdout belongs to the protocol
+    current_run_id.set(os.environ.get("RUN_ID"))  # the client passes the run id so our logs can be correlated
     server.run()  # defaults to the stdio transport
