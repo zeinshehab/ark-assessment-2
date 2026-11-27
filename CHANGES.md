@@ -244,6 +244,43 @@ Each decision lists the alternatives considered and who made the call ("user" or
 - **Removed `app.py`** (Streamlit).
 - **Test:** the UI is served with the strict CSP header.
 
+### Step 7: containerisation
+**`Dockerfile` (multi-stage).**
+- *Build stage:* installs exactly `uv.lock` (`uv sync --frozen --no-dev`) into a virtualenv.
+- *Runtime stage:* copies only that virtualenv and the source. No uv, compilers or dev tools.
+- **Base images pinned by digest.** These are multi-arch indexes, so the same pin works on the Windows PC (amd64) and the MacBook (arm64): `python:3.13-slim`, plus `uv` for the build stage.
+- **Non-root:** runs as uid 10001. The source is owned by root, so the app can read its code but not modify it.
+- **Image defaults are production:** `APP_ENV=production`, `DATA_DIR=/data` (a volume). `APP_VERSION` is a build argument, set to the git SHA.
+- **`HEALTHCHECK` on `/healthz`.** The deploy script checks `/readyz` separately.
+
+**`.dockerignore` is an allow-list.** Only `pyproject.toml`, `uv.lock`, the code, the benchmark tasks, the coding standard and the committed benchmark results are sent to the build. `.env`, secrets, `.data/`, PDFs, docs, tests and `.git` can't end up in the image, even by accident. Verified: the built image has no `.env`.
+
+**`deploy/compose.yaml` (production, one host).**
+- **app:**
+  - image pinned to a tag (the git SHA) from GitHub's container registry;
+  - non-secret settings from `.env.prod`;
+  - secrets as Compose secret files under `/run/secrets`, never environment variables;
+  - **read-only filesystem**, with only `/tmp` (tmpfs, 256 MB) and the `/data` volume writable;
+  - **all Linux capabilities dropped**, `no-new-privileges`;
+  - **1 GB memory, 1 CPU, 256 processes** (fork-bomb protection);
+  - port published on **127.0.0.1 only**;
+  - `restart: unless-stopped`;
+  - log rotation.
+- **cloudflared:** the Cloudflare Tunnel connector, pinned by digest, with its token as a secret file (`TUNNEL_TOKEN_FILE`), hardened the same way, and starting only once the app is healthy. It sits in a `tunnel` profile so the app can be started alone for local checks.
+- **`deploy/compose.local.yaml`** builds the image from the checkout instead of pulling it. **`deploy/secrets/README.md`** documents each secret, where to get it, permissions and rotation.
+
+**Verified locally (Docker Desktop, production mode, dummy keys, no LLM calls):**
+- the container becomes healthy and `/readyz` reports the MCP server starting inside the read-only container;
+- the API refuses unauthenticated requests (401);
+- writing to `/app` fails (read-only) while `/data` is writable;
+- the process has zero capabilities;
+- the MCP self-test runs the sandbox and ruff inside the container;
+- **the Linux-only sandbox tests pass, including the memory-bomb limit**;
+- logs are JSON with no key material;
+- **with an empty `groq_key` the container exits with code 2 and one line naming `GROQ_KEY`**, and keeps restarting unhealthy. `deploy.sh` will detect that and roll back.
+
+**Small fix:** uvicorn adds a colour-coded duplicate of each message (`color_message`) to its log records; it is now dropped from our JSON logs.
+
 ## 4. Removed or deliberately not built
 
 _Filled in as the work progresses._
